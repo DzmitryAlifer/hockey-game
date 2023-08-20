@@ -4,7 +4,7 @@ export const RINK_WIDTH = 400;
 export const RINK_LENGTH = RINK_WIDTH * 2.215;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DOWN = 5;
-export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 30;
+export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
 export const PUCK_SPEED_DECREASE_RATIO = 0.05;
 
 let isBoardMet = false;
@@ -20,14 +20,10 @@ export function getBoardBounce(x: number, y: number): 'x' | 'y' | null {
     const isNearYBoard = x <= PUCK_RADIUS || x >= RINK_LENGTH - PUCK_RADIUS;
     const isNearXBoard = y <= PUCK_RADIUS || y >= RINK_WIDTH - PUCK_RADIUS;
     const isNearBoard = isNearXBoard || isNearYBoard;
-
-    if (isNearBoard && !isBoardMet) {
-        isBoardMet = true;
-    } else {
-        isBoardMet = false;
-    }
+    isBoardMet = isNearBoard && !isBoardMet;
 
     if (!isBoardMet) return null;
+    
     return isNearXBoard ? 'x' : 'y';
 }
 
