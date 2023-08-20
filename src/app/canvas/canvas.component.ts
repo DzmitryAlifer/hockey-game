@@ -1,5 +1,6 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { RINK_WIDTH, RINK_LENGTH, drawPuck, isOutsideField } from 'src/utils/render';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, ViewChild } from '@angular/core';
+import { interval, tap } from 'rxjs';
+import { PI, PUCK_MAX_SPEED, PUCK_RADIUS, RINK_WIDTH, RINK_LENGTH, drawPuck, isOutsideField, calculatePuckShift, getRandomInRange } from 'src/utils/render';
 
 const RINK_IMG = new Image();
 RINK_IMG.src = 'assets/images/rink.svg';
@@ -7,6 +8,9 @@ RINK_IMG.src = 'assets/images/rink.svg';
 let ctx: CanvasRenderingContext2D;
 let puckX = RINK_LENGTH / 2;
 let puckY = RINK_WIDTH / 2;
+let puckInfo = '';
+const speed = getRandomInRange(20, PUCK_MAX_SPEED);
+const angle = Math.random() * 2 * PI;
 
 @Component({
   selector: 'app-canvas',
@@ -20,19 +24,27 @@ export class CanvasComponent implements AfterViewInit {
   readonly RINK_WIDTH = RINK_WIDTH;
   readonly RINK_LENGTH = RINK_LENGTH;
 
+  private readonly puckInfo$ = interval(100).pipe(tap(number => {
+    puckInfo = Math.round(speed) + ' kph';
+  }));
+
   ngAfterViewInit() {
     ctx = this.canvas.nativeElement.getContext('2d');
+    ctx.font = '12px Arial';
     requestAnimationFrame(render);
+    this.puckInfo$.subscribe();
   }
 }
 
 function render() {
   if (isOutsideField(puckX, puckY)) return;
 
-  const puckIncX = -8;
-  const puckIncY = -4;
-  ctx.drawImage(RINK_IMG, -puckX - 4, -puckY - 4, RINK_LENGTH - 4, RINK_WIDTH);
+  const [puckIncX, puckIncY] = calculatePuckShift(speed, angle);
+
+  ctx.drawImage(RINK_IMG, -puckX, -puckY, RINK_LENGTH - PUCK_RADIUS, RINK_WIDTH - PUCK_RADIUS);
   ctx.setTransform(1, 0, 0, 1, puckX, puckY);
+  
+  ctx.fillText(puckInfo, -20, -10);
   puckX += puckIncX;
   puckY += puckIncY;
   drawPuck(ctx);

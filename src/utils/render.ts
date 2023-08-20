@@ -1,8 +1,8 @@
 export const PI = Math.PI;
-export const FACE_OFF_SPOT_RADIUS = 6;
-export const PUCK_RADIUS = 3;
+export const PUCK_RADIUS = 4;
 export const RINK_WIDTH = 400;
-export const RINK_LENGTH = RINK_WIDTH * 2.25;
+export const RINK_LENGTH = RINK_WIDTH * 2.22;
+export const PUCK_MAX_SPEED = 200;
 
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
@@ -12,8 +12,16 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
 }
 
 export function isOutsideField(x: number, y: number): boolean {
-    return x <= PUCK_RADIUS || 
-        x >= RINK_LENGTH - PUCK_RADIUS ||
-        y <= PUCK_RADIUS ||
-        y >= RINK_WIDTH - PUCK_RADIUS;
+    return x <= 1.5 * PUCK_RADIUS || 
+        x >= RINK_LENGTH - 1.5 * PUCK_RADIUS ||
+        y <= 1.5 * PUCK_RADIUS ||
+        y >= RINK_WIDTH - 1.5 * PUCK_RADIUS;
+}
+
+export function calculatePuckShift(speed: number, angle: number): [number, number] {
+    return [Math.cos(angle) * speed / 10, Math.sin(angle) * speed / 10];
+}
+
+export function getRandomInRange(min: number, max: number): number {
+    return min + Math.random() * (max - min);
 }
