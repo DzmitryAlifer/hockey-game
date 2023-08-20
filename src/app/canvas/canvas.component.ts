@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, ViewChild } from '@angular/core';
 import { interval, tap } from 'rxjs';
-import { PI, PUCK_MAX_SPEED, PUCK_RADIUS, RINK_WIDTH, RINK_LENGTH, drawPuck, getBoardBounce, calculatePuckShift, getRandomInRange } from 'src/utils/render';
+import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DOWN, RINK_WIDTH, RINK_LENGTH, drawPuck, getBoardBounce, calculatePuckShift, getRandomInRange } from 'src/utils/render';
 
 const RINK_IMG = new Image();
 RINK_IMG.src = 'assets/images/rink.svg';
@@ -40,8 +40,10 @@ function render() {
   const boardBounce = getBoardBounce(puckX, puckY);
 
   if (boardBounce) {
-    speed = Math.max(speed - Math.max(speed / 2, 10), 0);
+    speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DOWN), 0);
     angle = boardBounce === 'x' ? -angle : PI - angle;
+  } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
+    speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
   }
 
   const [puckIncX, puckIncY] = calculatePuckShift(speed, angle);
