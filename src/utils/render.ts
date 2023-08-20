@@ -1,5 +1,6 @@
 export const PI = Math.PI;
 export const PUCK_RADIUS = 4;
+export const PUCK_CLEANUP_RADIUS = PUCK_RADIUS + 2;
 export const RINK_WIDTH = 400;
 export const RINK_LENGTH = RINK_WIDTH * 2.215;
 export const PUCK_MAX_SPEED = 200;
@@ -23,7 +24,7 @@ export function getBoardBounce(x: number, y: number): 'x' | 'y' | null {
     isBoardMet = isNearBoard && !isBoardMet;
 
     if (!isBoardMet) return null;
-    
+
     return isNearXBoard ? 'x' : 'y';
 }
 
