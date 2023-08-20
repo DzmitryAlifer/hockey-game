@@ -7,7 +7,7 @@ export const PUCK_MAX_SPEED = 200;
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(0, 0, PUCK_RADIUS, 0, PI * 2);
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#444';
     ctx.fill();
 }
 
