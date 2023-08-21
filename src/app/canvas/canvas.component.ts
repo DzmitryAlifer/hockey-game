@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DOWN, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
+import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
 
 interface PuckShot {
   puckX: number;
@@ -53,7 +53,7 @@ function render() {
   const boardBounce = getBoardBounce(puckX, puckY);
 
   if (boardBounce) {
-    speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DOWN), 0);
+    speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
     angle = boardBounce === 'x' ? -angle : PI - angle;
   } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);

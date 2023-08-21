@@ -5,7 +5,7 @@ export const RINK_WIDTH_PX = 400;
 export const CORNER_45_DEG_SIZE_PX = 65;
 export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
 export const PUCK_MAX_SPEED = 200;
-export const PUCK_BOUNCE_MIN_SPEED_DOWN = 5;
+export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
 export const PUCK_SPEED_DECREASE_RATIO = 0.05;
 
