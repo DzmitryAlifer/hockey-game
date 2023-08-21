@@ -1,11 +1,17 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Observable, Subject, map, startWith, withLatestFrom } from 'rxjs';
 import { PI, PUCK_CLEANUP_RADIUS, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DOWN, RINK_WIDTH, RINK_LENGTH, drawPuck, getBoardBounce, calculatePuckShift, getRandomInRange } from 'src/utils/render';
 
+interface PuckShot {
+  puckX: number;
+  puckY: number;
+  speed: number;
+  angle: number;
+}
+
 let ctx: CanvasRenderingContext2D;
-let puckX = RINK_LENGTH / 2;
-let puckY = RINK_WIDTH / 2;
-let speed = getRandomInRange(20, PUCK_MAX_SPEED);
-let angle = Math.random() * 2 * PI;
+let puckX: number, puckY: number, speed: number, angle: number;
 
 @Component({
   selector: 'app-canvas',
@@ -13,15 +19,37 @@ let angle = Math.random() * 2 * PI;
   styleUrls: ['./canvas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CanvasComponent implements AfterViewInit {
+export class CanvasComponent implements OnInit, AfterViewInit {
   @ViewChild('game') canvas!: ElementRef;
 
   readonly RINK_WIDTH = RINK_WIDTH;
   readonly RINK_LENGTH = RINK_LENGTH;
 
-  ngAfterViewInit() {
+  readonly formGroup = new FormGroup({
+    puckX: new FormControl<number>(RINK_LENGTH / 2, {nonNullable: true}),
+    puckY: new FormControl<number>(RINK_WIDTH / 2, { nonNullable: true }),
+    speed: new FormControl<number>(PUCK_MAX_SPEED / 2, { nonNullable: true }),
+    angle: new FormControl<number>(45, { nonNullable: true }),
+  });
+
+  readonly puckShot$ = new Subject<Partial<PuckShot>>();
+
+  ngOnInit(): void {
+    this.puckShot$.subscribe(puckShot => {
+      puckX = puckShot.puckX!;
+      puckY = puckShot.puckY!;
+      speed = puckShot.speed!;
+      angle = puckShot.angle! * PI / 180;
+    });
+  }
+
+  ngAfterViewInit(): void {
     ctx = this.canvas.nativeElement.getContext('2d');
     requestAnimationFrame(render);
+  }
+
+  submit(event: SubmitEvent): void {
+    console.log(event);
   }
 }
 
