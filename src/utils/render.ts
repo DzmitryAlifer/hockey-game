@@ -1,8 +1,9 @@
 export const PI = Math.PI;
-export const PUCK_RADIUS = 4;
-export const PUCK_CLEANUP_RADIUS = PUCK_RADIUS + 2;
-export const RINK_WIDTH = 400;
-export const RINK_LENGTH = RINK_WIDTH * 2.215;
+export const PUCK_RADIUS_PX = 4;
+export const PUCK_CLEANUP_RADIUS_PX = PUCK_RADIUS_PX + 2;
+export const RINK_WIDTH_PX = 400;
+export const CORNER_45_DEG_SIZE_PX = 65;
+export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DOWN = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
@@ -12,14 +13,14 @@ let isBoardMet = false;
 
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
-    ctx.arc(0, 0, PUCK_RADIUS, 0, PI * 2);
+    ctx.arc(0, 0, PUCK_RADIUS_PX, 0, PI * 2);
     ctx.fillStyle = '#444';
     ctx.fill();
 }
 
 export function getBoardBounce(x: number, y: number): 'x' | 'y' | null {
-    const isNearYBoard = x <= PUCK_RADIUS || x >= RINK_LENGTH - PUCK_RADIUS;
-    const isNearXBoard = y <= PUCK_RADIUS || y >= RINK_WIDTH - PUCK_RADIUS;
+    const isNearYBoard = x <= PUCK_RADIUS_PX || x >= RINK_LENGTH_PX - PUCK_RADIUS_PX;
+    const isNearXBoard = y <= PUCK_RADIUS_PX || y >= RINK_WIDTH_PX - PUCK_RADIUS_PX;
     const isNearBoard = isNearXBoard || isNearYBoard;
     isBoardMet = isNearBoard && !isBoardMet;
 
