@@ -47,10 +47,6 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     ctx = this.canvas.nativeElement.getContext('2d');
     requestAnimationFrame(render);
   }
-
-  submit(event: SubmitEvent): void {
-    console.log(event);
-  }
 }
 
 function render() {
