@@ -1,10 +1,10 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { PuckShot, PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
+import { BoardPart, PuckShot, PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
 
 let ctx: CanvasRenderingContext2D;
-let puckX: number, puckY: number, speed: number, angle: number;
+let puckX: number, puckY: number, speed: number, angle: number, angle2: number;
 
 @Component({
   selector: 'app-canvas',
@@ -22,7 +22,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     puckX: new FormControl<number>(RINK_LENGTH_PX / 2, {nonNullable: true}),
     puckY: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
     speed: new FormControl<number>(PUCK_MAX_SPEED / 2, { nonNullable: true }),
-    angle: new FormControl<number>(45, { nonNullable: true }),
+    angle: new FormControl<number>(135, { nonNullable: true }),
   });
 
   readonly puckShot$ = new Subject<Partial<PuckShot>>();
@@ -43,11 +43,12 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 }
 
 function render() {
-  const boardBounce = getBoardBounce(puckX, puckY, angle);
+  const boardBounce = getBoardBounce({ puckX, puckY, angle, speed });
 
-  if (boardBounce) {
+  if (boardBounce !== null) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
-    angle = boardBounce === 'x' ? -angle : PI - angle;
+    // change angle calculation
+    angle = [BoardPart.Top, BoardPart.Bottom].includes(boardBounce) ? 2 * PI - angle : PI - angle;
   } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
   }
