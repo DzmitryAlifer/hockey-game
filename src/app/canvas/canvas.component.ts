@@ -1,14 +1,7 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
-
-interface PuckShot {
-  puckX: number;
-  puckY: number;
-  speed: number;
-  angle: number;
-}
+import { PuckShot, PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
 
 let ctx: CanvasRenderingContext2D;
 let puckX: number, puckY: number, speed: number, angle: number;
@@ -50,7 +43,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 }
 
 function render() {
-  const boardBounce = getBoardBounce(puckX, puckY);
+  const boardBounce = getBoardBounce(puckX, puckY, angle);
 
   if (boardBounce) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
