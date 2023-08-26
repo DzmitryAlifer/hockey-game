@@ -47,7 +47,6 @@ function render() {
 
   if (boardBounce !== null) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
-    // change angle calculation
     angle = [BoardPart.Top, BoardPart.Bottom].includes(boardBounce) ? 2 * PI - angle : PI - angle;
   } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
