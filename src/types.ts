@@ -1,6 +1,10 @@
-export interface Movable {
+export interface Point {
     x: number;
     y: number;
+}
+
+export interface Movable {
+    point: Point;
     angle?: number;
     speed?: number;
 }

@@ -33,16 +33,25 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     number: new FormControl<number>(88, { nonNullable: true }),
   });
 
-  readonly puck$ = new Subject<Partial<Puck>>();
-  readonly player$ = new Subject<Partial<Player>>();
+  readonly puck$ = new Subject<any>();
+  readonly player$ = new Subject<any>();
 
   ngOnInit(): void {
-    this.puck$.subscribe(inputPuck => {
-      puck = { ...inputPuck, angle: inputPuck.angle! * PI / 180 } as Puck;
+    this.puck$.subscribe(({ x, y, speed, angle }) => {
+      puck = { 
+        point: {x, y},
+        speed,
+        angle: angle! * PI / 180,
+      } as Puck;
     });
     
-    this.player$.subscribe(inputPlayer => {
-      player = { ...inputPlayer, angle: inputPlayer.angle! * PI / 180 } as Player;
+    this.player$.subscribe(({ x, y, speed, angle, number }) => {
+      player = { 
+        point: { x, y },
+        speed,
+        angle: angle! * PI / 180,
+        number,
+       } as Player;
     });
   }
 
@@ -78,17 +87,17 @@ function drawMovingPuck(puck: Puck): void {
   }
 
   const [puckIncX, puckIncY] = calculatePuckShift(puck.speed!, puck.angle!);
-  puck.x += puckIncX;
-  puck.y += puckIncY;
+  puck.point.x += puckIncX;
+  puck.point.y += puckIncY;
 
-  ctx.setTransform(1, 0, 0, 1, puck.x, puck.y);
+  ctx.setTransform(1, 0, 0, 1, puck.point.x, puck.point.y);
   drawPuck(ctx);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function drawMovingPlayer(player: Player): void {
-  player.x--;
-  player.y++;
+  player.point.x--;
+  player.point.y++;
 
   drawPlayer(ctx, jerseyImage, player);
 }
