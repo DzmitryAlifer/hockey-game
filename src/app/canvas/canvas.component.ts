@@ -56,12 +56,12 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 function render() {
   ctx.clearRect(0, 0, RINK_LENGTH_PX, RINK_WIDTH_PX);
 
-  if (puck) {
-    drawMovingPuck(puck);
-  }
-
   if (player) {
     drawMovingPlayer(player);
+  }
+
+  if (puck) {
+    drawMovingPuck(puck);
   }
 
   requestAnimationFrame(render);
@@ -87,7 +87,7 @@ function drawMovingPuck(puck: Puck): void {
 }
 
 function drawMovingPlayer(player: Player): void {
-  player.x++;
+  player.x--;
   player.y++;
 
   drawPlayer(ctx, jerseyImage, player);
