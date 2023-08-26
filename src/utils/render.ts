@@ -1,4 +1,4 @@
-import { BoardPart, Movable, Puck } from '../types';
+import { BoardPart, Movable, Player, Puck } from '../types';
 
 export const PI = Math.PI;
 export const PUCK_RADIUS_PX = 4;
@@ -19,12 +19,12 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.fill();
 }
 
-export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement): void {
-    ctx.drawImage(jerseyImage!, RINK_LENGTH_PX / 2 - 32, RINK_WIDTH_PX / 2, 32, 32);
+export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement, { x, y }: Player): void {
+    ctx.drawImage(jerseyImage!, x - PLAYER_SIZE_PX / 2, y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
 }
 
-function getBoardPart({ x, y, angle, speed }: Movable): BoardPart|null {
-    if (!speed) return null;
+function getBoardPart({ x, y, angle, speed }: Movable): BoardPart | null {
+    if (!speed || angle === undefined) return null;
 
     if (angle <= 0) {
         angle += 2 * PI;

@@ -41,7 +41,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     requestAnimationFrame(render);
 
     jerseyImage = document.getElementById('jersey') as HTMLImageElement;
-    jerseyImage!.addEventListener('load', () => drawPlayer(ctx, jerseyImage));
+    jerseyImage!.addEventListener('load', () => drawPlayer(ctx, jerseyImage, { x: 443, y: 200 }));
   }
 }
 

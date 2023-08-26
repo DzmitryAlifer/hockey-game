@@ -1,16 +1,16 @@
 export interface Movable {
     x: number;
     y: number;
-    angle: number;
-    speed: number;
+    angle?: number;
+    speed?: number;
 }
 
 export interface Puck extends Movable {}
 
-export interface Player {
-    id: string;
-    name: string;
-    number: number;
+export interface Player extends Movable {
+    id?: string;
+    name?: string;
+    number?: number;
     hasPuck?: boolean;
 }
 
