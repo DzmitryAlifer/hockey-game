@@ -1,12 +1,12 @@
 <form [formGroup]="formGroup">
     <div>
         <label>Puck X</label>
-        <input [formControl]="formGroup.controls.puckX" type="number"/>
+        <input [formControl]="formGroup.controls.x" type="number"/>
     </div>
 
     <div>
         <label>Puck Y</label>
-        <input [formControl]="formGroup.controls.puckY" type="number" />
+        <input [formControl]="formGroup.controls.y" type="number" />
     </div>
 
     <div>
@@ -19,7 +19,7 @@
         <input [formControl]="formGroup.controls.angle" type="number" />
     </div>
 
-    <button (click)="puckShot$.next(formGroup.value)">Shot</button>
+    <button (click)="puck$.next(formGroup.value)">Shot</button>
 </form>
 
 <canvas #game [height]="RINK_WIDTH_PX" [width]="RINK_LENGTH_PX"></canvas>

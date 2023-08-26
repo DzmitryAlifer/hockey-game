@@ -1,10 +1,11 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { BoardPart, PuckShot, PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
+import { BoardPart, Movable, Puck } from '../../types';
+import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
 
 let ctx: CanvasRenderingContext2D;
-let puckX: number, puckY: number, speed: number, angle: number;
+let x: number, y: number, speed: number, angle: number;
 
 @Component({
   selector: 'app-canvas',
@@ -19,20 +20,20 @@ export class CanvasComponent implements OnInit, AfterViewInit {
   readonly RINK_LENGTH_PX = RINK_LENGTH_PX;
 
   readonly formGroup = new FormGroup({
-    puckX: new FormControl<number>(RINK_LENGTH_PX / 2, {nonNullable: true}),
-    puckY: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
+    x: new FormControl<number>(RINK_LENGTH_PX / 2, {nonNullable: true}),
+    y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
     speed: new FormControl<number>(PUCK_MAX_SPEED / 2, { nonNullable: true }),
     angle: new FormControl<number>(135, { nonNullable: true }),
   });
 
-  readonly puckShot$ = new Subject<Partial<PuckShot>>();
+  readonly puck$ = new Subject<Partial<Puck>>();
 
   ngOnInit(): void {
-    this.puckShot$.subscribe(puckShot => {
-      puckX = puckShot.puckX!;
-      puckY = puckShot.puckY!;
-      speed = puckShot.speed!;
-      angle = puckShot.angle! * PI / 180;
+    this.puck$.subscribe(puck => {
+      x = puck.x!;
+      y = puck.y!;
+      speed = puck.speed!;
+      angle = puck.angle! * PI / 180;
     });
   }
 
@@ -43,7 +44,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 }
 
 function render() {
-  const boardBounce = getBoardBounce({ puckX, puckY, angle, speed });
+  const boardBounce = getBoardBounce({ x, y, angle, speed });
 
   if (boardBounce !== null) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
@@ -53,11 +54,11 @@ function render() {
   }
 
   const [puckIncX, puckIncY] = calculatePuckShift(speed, angle);
-  puckX += puckIncX;
-  puckY += puckIncY;
+  x += puckIncX;
+  y += puckIncY;
 
   ctx.clearRect(-PUCK_CLEANUP_RADIUS_PX, -PUCK_CLEANUP_RADIUS_PX - 1, 2 * PUCK_CLEANUP_RADIUS_PX, 2 * PUCK_CLEANUP_RADIUS_PX);
-  ctx.setTransform(1, 0, 0, 1, puckX, puckY);
+  ctx.setTransform(1, 0, 0, 1, x, y);
   drawPuck(ctx);
 
   requestAnimationFrame(render);

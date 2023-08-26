@@ -1,3 +1,5 @@
+import { BoardPart, Puck } from '../types';
+
 export const PI = Math.PI;
 export const PUCK_RADIUS_PX = 4;
 export const PUCK_CLEANUP_RADIUS_PX = PUCK_RADIUS_PX + 2;
@@ -9,25 +11,6 @@ export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
 export const PUCK_SPEED_DECREASE_RATIO = 0.05;
 
-export interface PuckShot {
-    puckX: number;
-    puckY: number;
-    angle: number;
-    speed: number;
-}
-
-export enum BoardPart {
-    Left,
-    Top,
-    Right,
-    Bottom,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(0, 0, PUCK_RADIUS_PX, 0, PI * 2);
@@ -35,12 +18,12 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.fill();
 }
 
-function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null {
+function getBoardPart({ x, y, angle, speed }: Puck): BoardPart|null {
     if (!speed) return null;
 
     if (angle > 0 && angle <= PI / 2) {
-        const rightBoardDist = RINK_LENGTH_PX - puckX;
-        const bottomBoardDist = RINK_WIDTH_PX - puckY;
+        const rightBoardDist = RINK_LENGTH_PX - x;
+        const bottomBoardDist = RINK_WIDTH_PX - y;
 
         if (Math.tan(angle) * rightBoardDist < bottomBoardDist - CORNER_SEGMENT_SIZE_PX) {
             return BoardPart.Right;
@@ -52,8 +35,8 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
     }
 
     if (angle > PI / 2 && angle <= PI) {
-        const bottomBoardDist = RINK_WIDTH_PX - puckY;
-        const leftBoardDist = puckX;
+        const bottomBoardDist = RINK_WIDTH_PX - y;
+        const leftBoardDist = x;
 
         if (Math.tan(angle - PI / 2) * bottomBoardDist < leftBoardDist - CORNER_SEGMENT_SIZE_PX) {
             return BoardPart.Bottom;
@@ -65,8 +48,8 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
     }
 
     if (angle > PI && angle <= 3 * PI / 2) {
-        const leftBoardDist = puckX;
-        const topBoardDist = puckY;
+        const leftBoardDist = x;
+        const topBoardDist = y;
 
         if (Math.tan(angle - PI) * leftBoardDist < topBoardDist - CORNER_SEGMENT_SIZE_PX) {
             return BoardPart.Left;
@@ -77,8 +60,8 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
         }
     }
 
-    const topBoardDist = puckY;
-    const rightBoardDist = RINK_LENGTH_PX - puckX;
+    const topBoardDist = y;
+    const rightBoardDist = RINK_LENGTH_PX - x;
 
     if (Math.tan(angle - 3 * PI / 2) * topBoardDist < rightBoardDist - CORNER_SEGMENT_SIZE_PX) {
         return BoardPart.Top;
@@ -89,40 +72,40 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
     }
 }
 
-export function getBoardBounce(puckShot: PuckShot): BoardPart | null {
-    const targetBoardPart = getBoardPart(puckShot);
-    const { puckX, puckY } = puckShot;
+export function getBoardBounce(puck: Puck): BoardPart | null {
+    const targetBoardPart = getBoardPart(puck);
+    const { x, y } = puck;
     let isNearBoard = false;
     let cornerDist;
 
     switch (targetBoardPart) {
         case BoardPart.Right:
-            isNearBoard = puckX >= RINK_LENGTH_PX - PUCK_RADIUS_PX;
+            isNearBoard = x >= RINK_LENGTH_PX - PUCK_RADIUS_PX;
             break;
         case BoardPart.Bottom:
-            isNearBoard = puckY >= RINK_WIDTH_PX - PUCK_RADIUS_PX;
+            isNearBoard = y >= RINK_WIDTH_PX - PUCK_RADIUS_PX;
             break;
         case BoardPart.Left:
-            isNearBoard = puckX <= PUCK_RADIUS_PX;
+            isNearBoard = x <= PUCK_RADIUS_PX;
             break;
         case BoardPart.Top:
-            isNearBoard = puckY <= PUCK_RADIUS_PX;
+            isNearBoard = y <= PUCK_RADIUS_PX;
             break;
         case BoardPart.BottomRight:
-            cornerDist = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX]);
-            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
+            cornerDist = getSegmentDist([x, y], [RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(x, y, PUCK_RADIUS_PX);
             break;
         case BoardPart.BottomLeft:
-            cornerDist = getSegmentDist([puckX, puckY], [CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX], [0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX]);
-            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
+            cornerDist = getSegmentDist([x, y], [CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX], [0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(x, y, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopLeft:
-            cornerDist = getSegmentDist([puckX, puckY], [0, CORNER_SEGMENT_SIZE_PX], [CORNER_SEGMENT_SIZE_PX, 0]);
-            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
+            cornerDist = getSegmentDist([x, y], [0, CORNER_SEGMENT_SIZE_PX], [CORNER_SEGMENT_SIZE_PX, 0]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(x, y, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopRight:
-            cornerDist = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0], [RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX]);
-            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);;
+            cornerDist = getSegmentDist([x, y], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0], [RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(x, y, PUCK_RADIUS_PX);;
             break;
         default:
             return null;
