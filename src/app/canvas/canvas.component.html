@@ -1,26 +1,25 @@
-<form [formGroup]="formGroup">
-    <div>
-        <label>Puck X</label>
-        <input [formControl]="formGroup.controls.x" type="number"/>
-    </div>
+<div class="forms">
+    <form [formGroup]="puckInput">
+        <div>
+            <div>Puck X<input [formControl]="puckInput.controls.x" type="number"/></div>
+            <div>Puck Y<input [formControl]="puckInput.controls.y" type="number"/></div>
+            <div>Speed<input [formControl]="puckInput.controls.speed" type="number"/></div>
+            <div>Angle<input [formControl]="puckInput.controls.angle" type="number"/></div>
+        </div>
+        <button (click)="puck$.next(puckInput.value)">Move puck</button>
+    </form>
 
-    <div>
-        <label>Puck Y</label>
-        <input [formControl]="formGroup.controls.y" type="number" />
-    </div>
-
-    <div>
-        <label>Speed</label>
-        <input [formControl]="formGroup.controls.speed" type="number" />
-    </div>
-
-    <div>
-        <label>Angle</label>
-        <input [formControl]="formGroup.controls.angle" type="number" />
-    </div>
-
-    <button (click)="puck$.next(formGroup.value)">Shot</button>
-</form>
+    <form [formGroup]="playerInput">
+        <div>
+            <div>Player X<input [formControl]="playerInput.controls.x" type="number"/></div>
+            <div>Player Y<input [formControl]="playerInput.controls.y" type="number"/></div>
+            <div>Speed<input [formControl]="playerInput.controls.speed" type="number"/></div>
+            <div>Angle<input [formControl]="playerInput.controls.angle" type="number"/></div>
+            <div>Number<input [formControl]="playerInput.controls.number" type="number" /></div>
+        </div>
+        <button (click)="player$.next(playerInput.value)">Move player</button>
+    </form>
+</div>
 
 <canvas #game [height]="RINK_WIDTH_PX" [width]="RINK_LENGTH_PX"></canvas>
 

@@ -1,10 +1,10 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { BoardPart, Movable, Puck } from '../../types';
-import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculatePuckShift, getDeflectedAngle, drawPlayer } from 'src/utils/render';
+import { Player, Puck } from '../../types';
+import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculatePuckShift, getDeflectedAngle, drawPlayer } from 'src/utils/render';
 
-let count = 0, x: number, y: number, speed: number, angle: number, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
+let puck: Puck, player: Player, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
 
 @Component({
   selector: 'app-canvas',
@@ -18,54 +18,77 @@ export class CanvasComponent implements OnInit, AfterViewInit {
   readonly RINK_WIDTH_PX = RINK_WIDTH_PX;
   readonly RINK_LENGTH_PX = RINK_LENGTH_PX;
 
-  readonly formGroup = new FormGroup({
-    x: new FormControl<number>(RINK_LENGTH_PX / 2, {nonNullable: true}),
+  readonly puckInput = new FormGroup({
+    x: new FormControl<number>(RINK_LENGTH_PX / 2,  {nonNullable: true }),
     y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
     speed: new FormControl<number>(PUCK_MAX_SPEED / 2, { nonNullable: true }),
     angle: new FormControl<number>(135, { nonNullable: true }),
   });
 
+  readonly playerInput = new FormGroup({
+    x: new FormControl<number>(RINK_LENGTH_PX / 2, { nonNullable: true }),
+    y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
+    speed: new FormControl<number>(30, { nonNullable: true }),
+    angle: new FormControl<number>(135, { nonNullable: true }),
+    number: new FormControl<number>(88, { nonNullable: true }),
+  });
+
   readonly puck$ = new Subject<Partial<Puck>>();
+  readonly player$ = new Subject<Partial<Player>>();
 
   ngOnInit(): void {
-    this.puck$.subscribe(puck => {
-      x = puck.x!;
-      y = puck.y!;
-      speed = puck.speed!;
-      angle = puck.angle! * PI / 180;
+    this.puck$.subscribe(inputPuck => {
+      puck = { ...inputPuck, angle: inputPuck.angle! * PI / 180 } as Puck;
+    });
+    
+    this.player$.subscribe(inputPlayer => {
+      player = { ...inputPlayer, angle: inputPlayer.angle! * PI / 180 } as Player;
     });
   }
 
   ngAfterViewInit(): void {
     ctx = this.canvas.nativeElement.getContext('2d');
-    requestAnimationFrame(render);
-
     jerseyImage = document.getElementById('jersey') as HTMLImageElement;
-    jerseyImage!.addEventListener('load', () => drawPlayer(ctx, jerseyImage, { x: 443, y: 200 }));
+    requestAnimationFrame(render);
   }
 }
 
 function render() {
   ctx.clearRect(0, 0, RINK_LENGTH_PX, RINK_WIDTH_PX);
-  count++;
-  const boardBounce = getBounceBoardPart({ x, y, angle, speed });
 
-  if (boardBounce !== null) {
-    speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
-    angle = getDeflectedAngle(boardBounce, angle);
-  } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
-    speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
+  if (puck) {
+    drawMovingPuck(puck);
   }
 
-  const [puckIncX, puckIncY] = calculatePuckShift(speed, angle);
-  x += puckIncX;
-  y += puckIncY;
+  if (player) {
+    drawMovingPlayer(player);
+  }
 
-  ctx.setTransform(1, 0, 0, 1, x, y);
-  drawPuck(ctx);
-  
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawPlayer(ctx, jerseyImage, { x: 443 - count, y: 200 + count, number: 88 });
-  
   requestAnimationFrame(render);
+}
+
+function drawMovingPuck(puck: Puck): void {
+  const boardBounce = getBounceBoardPart(puck);
+
+  if (boardBounce !== null) {
+    puck.speed = Math.max(puck.speed! - Math.max(puck.speed! / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
+    puck.angle = getDeflectedAngle(boardBounce, puck.angle!);
+  } else if (puck.speed! < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
+    puck.speed = Math.max(puck.speed! - PUCK_SPEED_DECREASE_RATIO, 0);
+  }
+
+  const [puckIncX, puckIncY] = calculatePuckShift(puck.speed!, puck.angle!);
+  puck.x += puckIncX;
+  puck.y += puckIncY;
+
+  ctx.setTransform(1, 0, 0, 1, puck.x, puck.y);
+  drawPuck(ctx);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function drawMovingPlayer(player: Player): void {
+  player.x++;
+  player.y++;
+
+  drawPlayer(ctx, jerseyImage, player);
 }
