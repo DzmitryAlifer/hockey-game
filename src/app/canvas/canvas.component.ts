@@ -48,7 +48,30 @@ function render() {
 
   if (boardBounce !== null) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
-    angle = [BoardPart.Top, BoardPart.Bottom].includes(boardBounce) ? 2 * PI - angle : PI - angle;
+    switch (boardBounce) {
+      case BoardPart.Top:
+      case BoardPart.Bottom:
+        angle = 2 * PI - angle;
+        break;
+      case BoardPart.Left:
+      case BoardPart.Right:
+        angle = PI - angle;
+        break;
+      case BoardPart.TopLeft:
+        angle = angle - PI * 3 / 4;
+        break;
+      case BoardPart.TopRight:
+        angle = angle - PI * 5 / 4;
+        break;
+      case BoardPart.BottomLeft:
+        angle = PI / 4 - angle;
+        break;
+      case BoardPart.BottomRight:
+        angle = angle - PI / 2;
+        break;
+      default:
+        angle = angle;
+    }
   } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
   }
