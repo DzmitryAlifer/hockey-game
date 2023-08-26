@@ -65,7 +65,7 @@ function render() {
   drawPuck(ctx);
   
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawPlayer(ctx, jerseyImage, { x: 443 - count, y: 200 + count });
+  drawPlayer(ctx, jerseyImage, { x: 443 - count, y: 200 + count, number: 88 });
   
   requestAnimationFrame(render);
 }

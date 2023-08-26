@@ -19,8 +19,13 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.fill();
 }
 
-export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement, { x, y }: Player): void {
+export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement, { x, y, number }: Player): void {
     ctx.drawImage(jerseyImage!, x - PLAYER_SIZE_PX / 2, y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold ' + PLAYER_SIZE_PX / 3.5 + 'pt Arial bold';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(number), x, y);
 }
 
 function getBoardPart({ x, y, angle, speed }: Movable): BoardPart | null {
