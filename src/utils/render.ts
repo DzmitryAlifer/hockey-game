@@ -1,4 +1,4 @@
-import { BoardPart, Puck } from '../types';
+import { BoardPart, Movable, Puck } from '../types';
 
 export const PI = Math.PI;
 export const PUCK_RADIUS_PX = 4;
@@ -18,7 +18,7 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.fill();
 }
 
-function getBoardPart({ x, y, angle, speed }: Puck): BoardPart|null {
+function getBoardPart({ x, y, angle, speed }: Movable): BoardPart|null {
     if (!speed) return null;
 
     if (angle > 0 && angle <= PI / 2) {

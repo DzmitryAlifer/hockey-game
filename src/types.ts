@@ -5,12 +5,7 @@ export interface Movable {
     speed: number;
 }
 
-export interface Puck  {
-    x: number;
-    y: number;
-    angle: number;
-    speed: number;
-}
+export interface Puck extends Movable {}
 
 export interface Player {
     id: string;
