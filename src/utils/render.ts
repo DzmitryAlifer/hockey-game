@@ -6,6 +6,7 @@ export const PUCK_CLEANUP_RADIUS_PX = PUCK_RADIUS_PX + 2;
 export const RINK_WIDTH_PX = 400;
 export const CORNER_SEGMENT_SIZE_PX = 60;
 export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
+export const PLAYER_SIZE_PX = RINK_WIDTH_PX / 12;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
@@ -16,6 +17,10 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.arc(0, 0, PUCK_RADIUS_PX, 0, PI * 2);
     ctx.fillStyle = '#444';
     ctx.fill();
+}
+
+export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement): void {
+    ctx.drawImage(jerseyImage!, RINK_LENGTH_PX / 2 - 32, RINK_WIDTH_PX / 2, 32, 32);
 }
 
 function getBoardPart({ x, y, angle, speed }: Movable): BoardPart|null {
