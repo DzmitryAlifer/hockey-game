@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { BoardPart, Movable, Puck } from '../../types';
 import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculatePuckShift, getDeflectedAngle, drawPlayer } from 'src/utils/render';
 
-let x: number, y: number, speed: number, angle: number, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
+let count = 0, x: number, y: number, speed: number, angle: number, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
 
 @Component({
   selector: 'app-canvas',
@@ -46,6 +46,8 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 }
 
 function render() {
+  ctx.clearRect(0, 0, RINK_LENGTH_PX, RINK_WIDTH_PX);
+  count++;
   const boardBounce = getBounceBoardPart({ x, y, angle, speed });
 
   if (boardBounce !== null) {
@@ -59,9 +61,11 @@ function render() {
   x += puckIncX;
   y += puckIncY;
 
-  ctx.clearRect(-PUCK_CLEANUP_RADIUS_PX, -PUCK_CLEANUP_RADIUS_PX - 1, 2 * PUCK_CLEANUP_RADIUS_PX, 2 * PUCK_CLEANUP_RADIUS_PX);
   ctx.setTransform(1, 0, 0, 1, x, y);
   drawPuck(ctx);
-
+  
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  drawPlayer(ctx, jerseyImage, { x: 443 - count, y: 200 + count });
+  
   requestAnimationFrame(render);
 }
