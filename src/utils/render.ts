@@ -93,6 +93,7 @@ export function getBoardBounce(puckShot: PuckShot): BoardPart | null {
     const targetBoardPart = getBoardPart(puckShot);
     const { puckX, puckY } = puckShot;
     let isNearBoard = false;
+    let cornerDist;
 
     switch (targetBoardPart) {
         case BoardPart.Right:
@@ -108,22 +109,30 @@ export function getBoardBounce(puckShot: PuckShot): BoardPart | null {
             isNearBoard = puckY <= PUCK_RADIUS_PX;
             break;
         case BoardPart.BottomRight:
-            isNearBoard = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX]) <= PUCK_RADIUS_PX;
+            cornerDist = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
             break;
         case BoardPart.BottomLeft:
-            isNearBoard = getSegmentDist([puckX, puckY], [CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX], [0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX]) <= PUCK_RADIUS_PX;
+            cornerDist = getSegmentDist([puckX, puckY], [CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX], [0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopLeft:
-            isNearBoard = getSegmentDist([puckX, puckY], [0, CORNER_SEGMENT_SIZE_PX], [CORNER_SEGMENT_SIZE_PX, 0]) <= PUCK_RADIUS_PX;
+            cornerDist = getSegmentDist([puckX, puckY], [0, CORNER_SEGMENT_SIZE_PX], [CORNER_SEGMENT_SIZE_PX, 0]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopRight:
-            isNearBoard = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0], [RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX]) <= PUCK_RADIUS_PX;
+            cornerDist = getSegmentDist([puckX, puckY], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0], [RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX]);
+            isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(puckX, puckY, PUCK_RADIUS_PX);;
             break;
         default:
             return null;
     }
 
     return isNearBoard ? targetBoardPart : null;
+}
+
+function isPointOutsideRink(x: number, y: number, safeBoardDist: number = 0): boolean {
+    return x <= safeBoardDist || x >= RINK_LENGTH_PX - safeBoardDist || y <= safeBoardDist || y >= RINK_WIDTH_PX - safeBoardDist;
 }
 
 function getSegmentDist(point: [number, number], segmentStart: [number, number], segmentEnd: [number, number]): number {
