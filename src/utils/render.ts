@@ -66,7 +66,7 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
 
     if (angle > PI && angle <= 3 * PI / 2) {
         const leftBoardDist = puckX;
-        const topBoardDist = RINK_WIDTH_PX - puckY;
+        const topBoardDist = puckY;
 
         if (Math.tan(angle - PI) * leftBoardDist < topBoardDist - CORNER_SEGMENT_SIZE_PX) {
             return BoardPart.Left;
@@ -77,7 +77,7 @@ function getBoardPart({ puckX, puckY, angle, speed }: PuckShot): BoardPart|null 
         }
     }
 
-    const topBoardDist = RINK_WIDTH_PX - puckY;
+    const topBoardDist = puckY;
     const rightBoardDist = RINK_LENGTH_PX - puckX;
 
     if (Math.tan(angle - 3 * PI / 2) * topBoardDist < rightBoardDist - CORNER_SEGMENT_SIZE_PX) {
