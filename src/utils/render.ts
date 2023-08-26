@@ -21,6 +21,10 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
 function getBoardPart({ x, y, angle, speed }: Movable): BoardPart|null {
     if (!speed) return null;
 
+    if (angle <= 0) {
+        angle += 2 * PI;
+    }
+
     if (angle > 0 && angle <= PI / 2) {
         const rightBoardDist = RINK_LENGTH_PX - x;
         const bottomBoardDist = RINK_WIDTH_PX - y;
@@ -136,3 +140,4 @@ export function calculatePuckShift(speed: number, angle: number): [number, numbe
 export function getRandomInRange(min: number, max: number): number {
     return min + Math.random() * (max - min);
 }
+
