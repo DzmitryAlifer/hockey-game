@@ -106,19 +106,19 @@ export function getBounceBoardPart(puck: Puck): BoardPart | null {
             isNearBoard = point.y <= PUCK_RADIUS_PX;
             break;
         case BoardPart.BottomRight:
-            cornerDist = getSegmentDist([point.x, point.y], [RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX]);
+            cornerDist = getSegmentDist(point, { x: RINK_LENGTH_PX, y: RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX }, { x: RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, y: RINK_WIDTH_PX });
             isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(point, PUCK_RADIUS_PX);
             break;
         case BoardPart.BottomLeft:
-            cornerDist = getSegmentDist([point.x, point.y], [CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX], [0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX]);
+            cornerDist = getSegmentDist(point, { x: CORNER_SEGMENT_SIZE_PX, y: RINK_WIDTH_PX }, { x: 0, y: RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX });
             isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(point, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopLeft:
-            cornerDist = getSegmentDist([point.x, point.y], [0, CORNER_SEGMENT_SIZE_PX], [CORNER_SEGMENT_SIZE_PX, 0]);
+            cornerDist = getSegmentDist(point, { x: 0, y: CORNER_SEGMENT_SIZE_PX }, { x: CORNER_SEGMENT_SIZE_PX, y: 0 });
             isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(point, PUCK_RADIUS_PX);
             break;
         case BoardPart.TopRight:
-            cornerDist = getSegmentDist([point.x, point.y], [RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0], [RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX]);
+            cornerDist = getSegmentDist(point, { x: RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, y: 0 }, { x: RINK_LENGTH_PX, y: CORNER_SEGMENT_SIZE_PX });
             isNearBoard = cornerDist <= PUCK_RADIUS_PX || isPointOutsideRink(point, PUCK_RADIUS_PX);;
             break;
         default:
@@ -153,15 +153,15 @@ function isPointOutsideRink({ x, y }: Point, safeBoardDist: number = 0): boolean
     return x <= safeBoardDist || x >= RINK_LENGTH_PX - safeBoardDist || y <= safeBoardDist || y >= RINK_WIDTH_PX - safeBoardDist;
 }
 
-function getSegmentDist(point: [number, number], segmentStart: [number, number], segmentEnd: [number, number]): number {
-    const segmentVector = [segmentEnd[0] - segmentStart[0], segmentEnd[1] - segmentStart[1]];
-    const pointVector = [point[0] - segmentStart[0], point[1] - segmentStart[1]];
-    const segmentLengthSquared = segmentVector[0] * segmentVector[0] + segmentVector[1] * segmentVector[1];
-    const t = Math.max(0, Math.min(1, (pointVector[0] * segmentVector[0] + pointVector[1] * segmentVector[1]) / segmentLengthSquared));
-    const closestPoint = [segmentStart[0] + t * segmentVector[0], segmentStart[1] + t * segmentVector[1]];
-    const distanceVector = [point[0] - closestPoint[0], point[1] - closestPoint[1]];
+function getSegmentDist(point: Point, segmentStart: Point, segmentEnd: Point): number {
+    const segmentVector = { x: segmentEnd.x - segmentStart.x, y: segmentEnd.y - segmentStart.y };
+    const pointVector = { x: point.x - segmentStart.x, y: point.y - segmentStart.x };
+    const segmentLengthSquared = segmentVector.x * segmentVector.x + segmentVector.y * segmentVector.y;
+    const t = Math.max(0, Math.min(1, (pointVector.x * segmentVector.x + pointVector.y * segmentVector.y) / segmentLengthSquared));
+    const closestPoint = { x: segmentStart.x + t * segmentVector.x, y: segmentStart.y + t * segmentVector.y };
+    const distanceVector = { x: point.x - closestPoint.x, y: point.y - closestPoint.y };
 
-    return Math.sqrt(distanceVector[0] * distanceVector[0] + distanceVector[1] * distanceVector[1]);
+    return Math.sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
 }
 
 export function calculatePuckShift(speed: number, angle: number): [number, number] {
