@@ -2,7 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, 
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { BoardPart, Movable, Puck } from '../../types';
-import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
+import { PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculatePuckShift, getDeflectedAngle } from 'src/utils/render';
 
 let ctx: CanvasRenderingContext2D;
 let x: number, y: number, speed: number, angle: number;
@@ -44,34 +44,11 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 }
 
 function render() {
-  const boardBounce = getBoardBounce({ x, y, angle, speed });
+  const boardBounce = getBounceBoardPart({ x, y, angle, speed });
 
   if (boardBounce !== null) {
     speed = Math.max(speed - Math.max(speed / 2, PUCK_BOUNCE_MIN_SPEED_DECREASE), 0);
-    switch (boardBounce) {
-      case BoardPart.Top:
-      case BoardPart.Bottom:
-        angle = 2 * PI - angle;
-        break;
-      case BoardPart.Left:
-      case BoardPart.Right:
-        angle = PI - angle;
-        break;
-      case BoardPart.TopLeft:
-        angle = angle - PI * 3 / 4;
-        break;
-      case BoardPart.TopRight:
-        angle = angle - PI * 5 / 4;
-        break;
-      case BoardPart.BottomLeft:
-        angle = PI / 4 - angle;
-        break;
-      case BoardPart.BottomRight:
-        angle = angle - PI / 2;
-        break;
-      default:
-        angle = angle;
-    }
+    angle = getDeflectedAngle(boardBounce, angle);
   } else if (speed < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     speed = Math.max(speed - PUCK_SPEED_DECREASE_RATIO, 0);
   }

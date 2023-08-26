@@ -76,7 +76,7 @@ function getBoardPart({ x, y, angle, speed }: Movable): BoardPart|null {
     }
 }
 
-export function getBoardBounce(puck: Puck): BoardPart | null {
+export function getBounceBoardPart(puck: Puck): BoardPart | null {
     const targetBoardPart = getBoardPart(puck);
     const { x, y } = puck;
     let isNearBoard = false;
@@ -116,6 +116,27 @@ export function getBoardBounce(puck: Puck): BoardPart | null {
     }
 
     return isNearBoard ? targetBoardPart : null;
+}
+
+export function getDeflectedAngle(bounceBoardPart: BoardPart, initialAngle: number): number {
+    switch (bounceBoardPart) {
+        case BoardPart.Top:
+        case BoardPart.Bottom:
+            return 2 * PI - initialAngle;
+        case BoardPart.Left:
+        case BoardPart.Right:
+            return PI - initialAngle;
+        case BoardPart.TopLeft:
+            return initialAngle - PI * 3 / 4;
+        case BoardPart.TopRight:
+            return initialAngle - PI * 5 / 4;
+        case BoardPart.BottomLeft:
+            return PI / 4 - initialAngle;
+        case BoardPart.BottomRight:
+            return initialAngle - PI / 2;
+        default:
+            return initialAngle;
+    }
 }
 
 function isPointOutsideRink(x: number, y: number, safeBoardDist: number = 0): boolean {
