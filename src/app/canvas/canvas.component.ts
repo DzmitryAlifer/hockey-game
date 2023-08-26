@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { BoardPart, PuckShot, PI, PUCK_CLEANUP_RADIUS_PX, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBoardBounce, calculatePuckShift } from 'src/utils/render';
 
 let ctx: CanvasRenderingContext2D;
-let puckX: number, puckY: number, speed: number, angle: number, angle2: number;
+let puckX: number, puckY: number, speed: number, angle: number;
 
 @Component({
   selector: 'app-canvas',
