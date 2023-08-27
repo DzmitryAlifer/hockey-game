@@ -87,6 +87,7 @@ function drawMovingPuck(puck: Puck): void {
     puck.angle = getDeflectedAngle(boardBounce, puck.angle!);
   } else if (puck.speed! < PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE) {
     puck.speed = Math.max(puck.speed! - PUCK_SPEED_DECREASE_RATIO, 0);
+    // puck.speed = Math.max(puck.speed!, 0);
   }
 
   const puckShift = calculateShift(puck.speed!, puck.angle!);

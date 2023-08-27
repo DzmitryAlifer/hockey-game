@@ -42,6 +42,10 @@ function getBoardPart({ point, angle, speed }: Movable): BoardPart | null {
         angle += 2 * PI;
     }
 
+    if (angle > 2 * PI) {
+        angle -= 2 * PI;
+    }
+
     if (angle > 0 && angle <= PI / 2) {
         const rightBoardDist = RINK_LENGTH_PX - point.x;
         const bottomBoardDist = RINK_WIDTH_PX - point.y;
