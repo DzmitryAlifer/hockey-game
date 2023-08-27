@@ -41,7 +41,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.puck$.subscribe(({ x, y, speed, angle }) => {
       puck = { 
-        point: {x, y},
+        point: { x, y },
         speed,
         angle: angle! * PI / 180,
       } as Puck;
