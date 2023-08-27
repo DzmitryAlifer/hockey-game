@@ -50,7 +50,6 @@
             <mat-label>Number</mat-label>
             <input matInput [formControl]="player1Input.controls.number" type="number" />
         </mat-form-field>
-        <button mat-button (click)="player1$.next(player1Input.value)">Move player</button>
     </form>
 
     <form [formGroup]="player2Input">
@@ -83,10 +82,12 @@
             <mat-label>Number</mat-label>
             <input matInput [formControl]="player2Input.controls.number" type="number" />
         </mat-form-field>
-        <button mat-button (click)="player2$.next(player2Input.value)">Move player</button>
     </form>
+
+    <button mat-button (click)="player1$.next(player1Input.value); player2$.next(player2Input.value);">Move players</button>
 </div>
 
 <canvas #game [height]="RINK_WIDTH_PX" [width]="RINK_LENGTH_PX"></canvas>
 
-<img id="jersey" src="../../assets/images/jersey_red.png" width="36" />
+<img id="jersey-red" src="../../assets/images/jersey_red.png" width="36" />
+<img id="jersey-blue" src="../../assets/images/jersey_blue.png" width="36" />

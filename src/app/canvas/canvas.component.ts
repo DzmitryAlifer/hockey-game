@@ -4,9 +4,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { Subject } from 'rxjs';
 import { Player, Puck } from '../../types';
-import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, drawPlayer, calculatePlayerShift } from 'src/utils/render';
+import { PI, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, calculatePlayerShift, PLAYER_SIZE_PX } from 'src/utils/render';
 
-let puck: Puck, player1: Player, player2: Player, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
+let puck: Puck, player1: Player, player2: Player, ctx: CanvasRenderingContext2D, player1Image: HTMLImageElement, player2Image: HTMLImageElement;
 
 @Component({
   selector: 'app-canvas',
@@ -35,7 +35,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     speed: new FormControl<number>(30, { nonNullable: true }),
     destinationX: new FormControl<number>(343, { nonNullable: true }),
     destinationY: new FormControl<number>(300, { nonNullable: true }),
-    color: new FormControl<string>('#c00', { nonNullable: true }),
+    color: new FormControl<string>('#0c0', { nonNullable: true }),
     number: new FormControl<number>(11, { nonNullable: true }),
   });
 
@@ -85,7 +85,8 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     ctx = this.canvas.nativeElement.getContext('2d');
-    jerseyImage = document.getElementById('jersey') as HTMLImageElement;
+    player1Image = document.getElementById('jersey-red') as HTMLImageElement;
+    player2Image = document.getElementById('jersey-blue') as HTMLImageElement;
     requestAnimationFrame(render);
   }
 }
@@ -93,12 +94,8 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 function render() {
   ctx.clearRect(0, 0, RINK_LENGTH_PX, RINK_WIDTH_PX);
 
-  if (player1) {
-    drawMovingPlayer(player1);
-  }
-
-  if (player2) {
-    drawMovingPlayer(player2);
+  if (player1 && player2) {
+    drawMovingPlayers([player1, player2], [player1Image, player2Image]);
   }
 
   if (puck) {
@@ -127,10 +124,26 @@ function drawMovingPuck(puck: Puck): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
-function drawMovingPlayer(player: Player): void {
-  const playerShift = calculatePlayerShift(player);
-  player.point.x += playerShift.x;
-  player.point.y += playerShift.y;
-  drawPlayer(ctx, jerseyImage, player);
-  player.destination = puck.point;
+function drawMovingPlayers(players: Player[], images: HTMLImageElement[]): void {
+  for (let i = 0; i < players.length; i++) {
+    const player = players[i];
+    const playerShift = calculatePlayerShift(player);
+    player.point.x += playerShift.x;
+    player.point.y += playerShift.y;
+
+    // Draw colored jersey
+    // ctx.fillStyle = player.color;
+    // ctx.fillRect(player.point.x - PLAYER_SIZE_PX / 2, player.point.y -  PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
+    ctx.drawImage(images[i]!, player.point.x - PLAYER_SIZE_PX / 2, player.point.y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Draw number
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold ' + PLAYER_SIZE_PX / 3.5 + 'pt Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(player.number), player.point.x, player.point.y);
+
+    player.destination = puck.point;
+  }
 }
