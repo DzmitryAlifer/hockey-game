@@ -29,7 +29,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImage
     ctx.globalCompositeOperation = 'source-over';
     
     ctx.fillStyle = 'white';
-    ctx.font = 'bold ' + PLAYER_SIZE_PX / 3.5 + 'pt Arial bold';
+    ctx.font = 'bold ' + PLAYER_SIZE_PX / 3.5 + 'pt Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(number), point.x, point.y);
