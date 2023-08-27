@@ -5,6 +5,7 @@ export interface Point {
 
 export interface Movable {
     point: Point;
+    destination?: Point;
     angle?: number;
     speed?: number;
 }

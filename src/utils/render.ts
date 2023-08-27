@@ -7,10 +7,12 @@ export const RINK_WIDTH_PX = 400;
 export const CORNER_SEGMENT_SIZE_PX = 60;
 export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
 export const PLAYER_SIZE_PX = RINK_WIDTH_PX / 12;
+export const PLAYER_MAX_SPEED = 40;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
 export const PUCK_SPEED_DECREASE_RATIO = 0.05;
+export const SPEED_TO_SHIFT_RATIO = 10;
 
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
@@ -164,8 +166,20 @@ function getSegmentDist(point: Point, segmentStart: Point, segmentEnd: Point): n
     return Math.sqrt(distanceVector.x * distanceVector.x + distanceVector.y * distanceVector.y);
 }
 
-export function calculatePuckShift(speed: number, angle: number): [number, number] {
-    return [Math.cos(angle) * speed / 10, Math.sin(angle) * speed / 10];
+export function calculateShift(speed: number, angle: number): Point {
+    return { x: Math.cos(angle) * speed / SPEED_TO_SHIFT_RATIO, y: Math.sin(angle) * speed / SPEED_TO_SHIFT_RATIO };
+}
+
+export function calculatePlayerShift({ point, destination, speed }: Player): Point {
+    const dx = destination!.x - point.x;
+    const dy = destination!.y - point.y;
+    const angle = PI / 2 - Math.atan(dx / dy) + (dy < 0 ? PI : 0);
+    const { x, y } = calculateShift(speed!, angle);
+
+    return {
+        x: Math.abs(x) < Math.abs(dx) ? x : 0,
+        y: Math.abs(y) < Math.abs(dy) ? y : 0, 
+    };
 }
 
 export function getRandomInRange(min: number, max: number): number {

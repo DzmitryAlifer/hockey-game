@@ -14,7 +14,8 @@
             <div>Player X<input [formControl]="playerInput.controls.x" type="number"/></div>
             <div>Player Y<input [formControl]="playerInput.controls.y" type="number"/></div>
             <div>Speed<input [formControl]="playerInput.controls.speed" type="number"/></div>
-            <div>Angle<input [formControl]="playerInput.controls.angle" type="number"/></div>
+            <div>Destination X<input [formControl]="playerInput.controls.destinationX" type="number"/></div>
+            <div>Destination Y<input [formControl]="playerInput.controls.destinationY" type="number" /></div>
             <div>Number<input [formControl]="playerInput.controls.number" type="number" /></div>
         </div>
         <button (click)="player$.next(playerInput.value)">Move player</button>

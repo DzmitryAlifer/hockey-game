@@ -2,7 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, 
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { Player, Puck } from '../../types';
-import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculatePuckShift, getDeflectedAngle, drawPlayer } from 'src/utils/render';
+import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, drawPlayer, calculatePlayerShift } from 'src/utils/render';
 
 let puck: Puck, player: Player, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
 
@@ -29,7 +29,8 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     x: new FormControl<number>(RINK_LENGTH_PX / 2, { nonNullable: true }),
     y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
     speed: new FormControl<number>(30, { nonNullable: true }),
-    angle: new FormControl<number>(135, { nonNullable: true }),
+    destinationX: new FormControl<number>(343, { nonNullable: true }),
+    destinationY: new FormControl<number>(300, { nonNullable: true }),
     number: new FormControl<number>(88, { nonNullable: true }),
   });
 
@@ -45,11 +46,11 @@ export class CanvasComponent implements OnInit, AfterViewInit {
       } as Puck;
     });
     
-    this.player$.subscribe(({ x, y, speed, angle, number }) => {
+    this.player$.subscribe(({ x, y, speed, destinationX, destinationY, number }) => {
       player = { 
         point: { x, y },
         speed,
-        angle: angle! * PI / 180,
+        destination: { x: destinationX, y: destinationY },
         number,
        } as Player;
     });
@@ -86,9 +87,9 @@ function drawMovingPuck(puck: Puck): void {
     puck.speed = Math.max(puck.speed! - PUCK_SPEED_DECREASE_RATIO, 0);
   }
 
-  const [puckIncX, puckIncY] = calculatePuckShift(puck.speed!, puck.angle!);
-  puck.point.x += puckIncX;
-  puck.point.y += puckIncY;
+  const puckShift = calculateShift(puck.speed!, puck.angle!);
+  puck.point.x += puckShift.x;
+  puck.point.y += puckShift.y;
 
   ctx.setTransform(1, 0, 0, 1, puck.point.x, puck.point.y);
   drawPuck(ctx);
@@ -96,8 +97,8 @@ function drawMovingPuck(puck: Puck): void {
 }
 
 function drawMovingPlayer(player: Player): void {
-  player.point.x--;
-  player.point.y++;
-
+  const playerShift = calculatePlayerShift(player);
+  player.point.x += playerShift.x;
+  player.point.y += playerShift.y;
   drawPlayer(ctx, jerseyImage, player);
 }
