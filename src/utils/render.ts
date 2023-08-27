@@ -10,8 +10,8 @@ export const PLAYER_SIZE_PX = RINK_WIDTH_PX / 12;
 export const PLAYER_MAX_SPEED = 40;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
-export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 50;
-export const PUCK_SPEED_DECREASE_RATIO = 0.05;
+export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 30;
+export const PUCK_SPEED_DECREASE_RATIO = 0.02;
 export const SPEED_TO_SHIFT_RATIO = 10;
 
 export function drawPuck(ctx: CanvasRenderingContext2D) {
