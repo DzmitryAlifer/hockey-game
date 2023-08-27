@@ -31,6 +31,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
     speed: new FormControl<number>(30, { nonNullable: true }),
     destinationX: new FormControl<number>(343, { nonNullable: true }),
     destinationY: new FormControl<number>(300, { nonNullable: true }),
+    color: new FormControl<string>('orange', { nonNullable: true }),
     number: new FormControl<number>(88, { nonNullable: true }),
   });
 
@@ -46,11 +47,12 @@ export class CanvasComponent implements OnInit, AfterViewInit {
       } as Puck;
     });
     
-    this.player$.subscribe(({ x, y, speed, destinationX, destinationY, number }) => {
+    this.player$.subscribe(({ x, y, speed, destinationX, destinationY, color, number }) => {
       player = { 
         point: { x, y },
         speed,
         destination: { x: destinationX, y: destinationY },
+        color,
         number,
        } as Player;
     });

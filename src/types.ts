@@ -13,6 +13,7 @@ export interface Movable {
 export interface Puck extends Movable {}
 
 export interface Player extends Movable {
+    color: string;
     id?: string;
     name?: string;
     number?: number;

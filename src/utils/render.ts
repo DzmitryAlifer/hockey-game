@@ -21,8 +21,13 @@ export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.fill();
 }
 
-export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement, { point, number }: Player): void {
+export function drawPlayer(ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement, { point, color, number }: Player): void {
+    ctx.fillStyle = color;
+    ctx.fillRect(point.x - PLAYER_SIZE_PX / 2, point.y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
+    ctx.globalCompositeOperation = 'destination-in';
     ctx.drawImage(jerseyImage!, point.x - PLAYER_SIZE_PX / 2, point.y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
+    ctx.globalCompositeOperation = 'source-over';
+    
     ctx.fillStyle = 'white';
     ctx.font = 'bold ' + PLAYER_SIZE_PX / 3.5 + 'pt Arial bold';
     ctx.textAlign = 'center';

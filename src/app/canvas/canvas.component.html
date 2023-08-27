@@ -16,6 +16,7 @@
             <div>Speed<input [formControl]="playerInput.controls.speed" type="number"/></div>
             <div>Destination X<input [formControl]="playerInput.controls.destinationX" type="number"/></div>
             <div>Destination Y<input [formControl]="playerInput.controls.destinationY" type="number" /></div>
+            <div>Color<input [formControl]="playerInput.controls.color" type="text" /></div>
             <div>Number<input [formControl]="playerInput.controls.number" type="number" /></div>
         </div>
         <button (click)="player$.next(playerInput.value)">Move player</button>
