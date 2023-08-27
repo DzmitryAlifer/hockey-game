@@ -1,20 +1,18 @@
 import { NgModule } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CanvasComponent } from './canvas/canvas.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    CanvasComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     AppRoutingModule,
+    BrowserAnimationsModule,
     BrowserModule,
-    ReactiveFormsModule,
+    CanvasComponent,
   ],
   bootstrap: [AppComponent],
 })

@@ -1,13 +1,17 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
 import { Subject } from 'rxjs';
 import { Player, Puck } from '../../types';
 import { PI, PUCK_MAX_SPEED, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, drawPlayer, calculatePlayerShift } from 'src/utils/render';
 
-let puck: Puck, player: Player, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
+let puck: Puck, player1: Player, player2: Player, ctx: CanvasRenderingContext2D, jerseyImage: HTMLImageElement;
 
 @Component({
   selector: 'app-canvas',
+  standalone: true,
+  imports: [MatButtonModule, MatInputModule, ReactiveFormsModule],
   templateUrl: './canvas.component.html',
   styleUrls: ['./canvas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,22 +25,33 @@ export class CanvasComponent implements OnInit, AfterViewInit {
   readonly puckInput = new FormGroup({
     x: new FormControl<number>(RINK_LENGTH_PX / 2,  {nonNullable: true }),
     y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
-    speed: new FormControl<number>(PUCK_MAX_SPEED / 2, { nonNullable: true }),
+    speed: new FormControl<number>(50, { nonNullable: true }),
     angle: new FormControl<number>(135, { nonNullable: true }),
   });
 
-  readonly playerInput = new FormGroup({
-    x: new FormControl<number>(RINK_LENGTH_PX / 2, { nonNullable: true }),
+  readonly player1Input = new FormGroup({
+    x: new FormControl<number>(RINK_LENGTH_PX / 2 - 50, { nonNullable: true }),
     y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
     speed: new FormControl<number>(30, { nonNullable: true }),
     destinationX: new FormControl<number>(343, { nonNullable: true }),
     destinationY: new FormControl<number>(300, { nonNullable: true }),
     color: new FormControl<string>('#c00', { nonNullable: true }),
-    number: new FormControl<number>(88, { nonNullable: true }),
+    number: new FormControl<number>(11, { nonNullable: true }),
+  });
+
+  readonly player2Input = new FormGroup({
+    x: new FormControl<number>(RINK_LENGTH_PX / 2 + 50, { nonNullable: true }),
+    y: new FormControl<number>(RINK_WIDTH_PX / 2, { nonNullable: true }),
+    speed: new FormControl<number>(20, { nonNullable: true }),
+    destinationX: new FormControl<number>(343, { nonNullable: true }),
+    destinationY: new FormControl<number>(300, { nonNullable: true }),
+    color: new FormControl<string>('#00c', { nonNullable: true }),
+    number: new FormControl<number>(22, { nonNullable: true }),
   });
 
   readonly puck$ = new Subject<any>();
-  readonly player$ = new Subject<any>();
+  readonly player1$ = new Subject<any>();
+  readonly player2$ = new Subject<any>();
 
   ngOnInit(): void {
     this.puck$.subscribe(({ x, y, speed, angle }) => {
@@ -47,14 +62,24 @@ export class CanvasComponent implements OnInit, AfterViewInit {
       } as Puck;
     });
     
-    this.player$.subscribe(({ x, y, speed, destinationX, destinationY, color, number }) => {
-      player = { 
+    this.player1$.subscribe(({ x, y, speed, destinationX, destinationY, color, number }) => {
+      player1 = { 
         point: { x, y },
         speed,
         destination: { x: destinationX, y: destinationY },
         color,
         number,
        } as Player;
+    });
+
+    this.player2$.subscribe(({ x, y, speed, destinationX, destinationY, color, number }) => {
+      player2 = {
+        point: { x, y },
+        speed,
+        destination: { x: destinationX, y: destinationY },
+        color,
+        number,
+      } as Player;
     });
   }
 
@@ -68,8 +93,12 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 function render() {
   ctx.clearRect(0, 0, RINK_LENGTH_PX, RINK_WIDTH_PX);
 
-  if (player) {
-    drawMovingPlayer(player);
+  if (player1) {
+    drawMovingPlayer(player1);
+  }
+
+  if (player2) {
+    drawMovingPlayer(player2);
   }
 
   if (puck) {
@@ -103,4 +132,5 @@ function drawMovingPlayer(player: Player): void {
   player.point.x += playerShift.x;
   player.point.y += playerShift.y;
   drawPlayer(ctx, jerseyImage, player);
+  player.destination = puck.point;
 }
