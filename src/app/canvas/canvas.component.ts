@@ -132,8 +132,6 @@ function drawMovingPlayers(players: Player[], images: HTMLImageElement[]): void 
     player.point.y += playerShift.y;
 
     // Draw colored jersey
-    // ctx.fillStyle = player.color;
-    // ctx.fillRect(player.point.x - PLAYER_SIZE_PX / 2, player.point.y -  PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
     ctx.drawImage(images[i]!, player.point.x - PLAYER_SIZE_PX / 2, player.point.y - PLAYER_SIZE_PX / 2, PLAYER_SIZE_PX, PLAYER_SIZE_PX);
     ctx.globalCompositeOperation = 'source-over';
 
