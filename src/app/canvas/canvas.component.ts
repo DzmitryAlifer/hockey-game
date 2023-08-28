@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { Subject } from 'rxjs';
 import { Player, Puck } from '../../types';
-import { PI, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, calculatePlayerShift, PLAYER_SIZE_PX } from 'src/utils/render';
+import { PI, PUCK_SPEED_DECREASE_RATIO, PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE, PUCK_BOUNCE_MIN_SPEED_DECREASE, RINK_WIDTH_PX, RINK_LENGTH_PX, drawPuck, getBounceBoardPart, calculateShift, getDeflectedAngle, calculatePlayerShift, PLAYER_SIZE_PX, isNear } from 'src/utils/render';
 
 let puck: Puck, player1: Player, player2: Player, ctx: CanvasRenderingContext2D, player1Image: HTMLImageElement, player2Image: HTMLImageElement;
 
@@ -142,5 +142,9 @@ function drawMovingPlayers(players: Player[], images: HTMLImageElement[]): void 
     ctx.fillText(String(player.number), player.point.x, player.point.y);
 
     player.destination = puck.point;
+
+    if (isNear(player, puck)) {
+      puck.angle = undefined;
+    }
   }
 }

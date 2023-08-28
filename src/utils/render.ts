@@ -13,6 +13,7 @@ export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 30;
 export const PUCK_SPEED_DECREASE_RATIO = 0.02;
 export const SPEED_TO_SHIFT_RATIO = 10;
+export const CLOSE_DISTANCE_PX = PLAYER_SIZE_PX / 2;
 
 export function drawPuck(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
@@ -179,5 +180,10 @@ export function calculatePlayerShift({ point, destination, speed }: Player): Poi
 
 export function getRandomInRange(min: number, max: number): number {
     return min + Math.random() * (max - min);
+}
+
+export function isNear(movable1: Movable, movable2: Movable): boolean {
+    return Math.abs(movable1.point.x - movable2.point.x) <= CLOSE_DISTANCE_PX &&
+        Math.abs(movable1.point.y - movable2.point.y) <= CLOSE_DISTANCE_PX;
 }
 
