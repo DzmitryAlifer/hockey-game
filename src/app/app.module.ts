@@ -5,6 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CanvasComponent } from './canvas/canvas.component';
+import { ThreeDemoComponent } from './three-demo/three-demo.component';
 
 @NgModule({
   declarations: [AppComponent],
@@ -13,6 +14,7 @@ import { CanvasComponent } from './canvas/canvas.component';
     BrowserAnimationsModule,
     BrowserModule,
     CanvasComponent,
+    ThreeDemoComponent,
   ],
   bootstrap: [AppComponent],
 })
