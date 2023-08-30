@@ -6,6 +6,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CanvasComponent } from './canvas/canvas.component';
 import { ThreeDemoComponent } from './three-demo/three-demo.component';
+import { PixiDemoComponent } from './pixi-demo/pixi-demo.component';
 
 @NgModule({
   declarations: [AppComponent],
@@ -14,6 +15,7 @@ import { ThreeDemoComponent } from './three-demo/three-demo.component';
     BrowserAnimationsModule,
     BrowserModule,
     CanvasComponent,
+    PixiDemoComponent,
     ThreeDemoComponent,
   ],
   bootstrap: [AppComponent],
