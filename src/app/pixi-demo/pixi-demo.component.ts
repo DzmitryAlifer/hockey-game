@@ -1,7 +1,16 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PLAYER_SIZE_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
-import * as PIXI from 'pixi.js';
+import {
+  b2EdgeShape,
+  b2Vec2,
+  b2FixtureDef,
+  b2PolygonShape,
+  b2BodyType,
+  b2RandomFloat,
+  b2CircleShape,
+  b2Body,
+} from "@box2d/core";
 
 @Component({
   selector: 'app-pixi-demo',
@@ -17,14 +26,16 @@ export class PixiDemoComponent implements AfterViewInit {
     this.zone.runOutsideAngular(async () => {
       const app = this.getApp();
       const player = getPlayer();
+      let puck = getPuck(RINK_LENGTH_PX / 2, RINK_WIDTH_PX / 2);
 
       app.stage.addChild(await getBackgroundRink());
       app.stage.addChild(getRinkBorder());
-      app.stage.addChild(player);
-      app.stage.addChild(getPuck());
+      // app.stage.addChild(player);
+      app.stage.addChild(puck);
       
       app.ticker.add((delta) => {
-        player.rotation += 0.03 * delta;
+        // player.rotation += 0.03 * delta;
+        puck.transform.position.x += 1;
       });
     });
   }
@@ -72,11 +83,11 @@ function getPlayer(): Sprite {
   return player;
 }
 
-function getPuck(): Graphics {
+function getPuck(x: number, y: number): Graphics {
   const puck = new Graphics();
   puck.lineStyle(1, '#666');
   puck.beginFill('#222');
-  puck.drawCircle(RINK_LENGTH_PX / 2, RINK_WIDTH_PX / 2, PUCK_RADIUS_PX);
+  puck.drawCircle(x, y, PUCK_RADIUS_PX);
   puck.endFill();
 
   return puck;
