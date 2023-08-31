@@ -1,14 +1,17 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PLAYER_SIZE_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
+import { CORNER_SEGMENT_SIZE_PX, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
 
-interface CollidedSprite extends Sprite {
+interface Collided {
   acceleration?: Point;
   mass?: number;
 }
 
-const movementSpeed = 0.05;
-const impulsePower = 1;
+type CollidedSprite = Sprite & Collided;
+type CollidedGraphics = Graphics & Collided;
+
+const playerSpeed = 0.05;
+const playerImpulse = 2;
 
 @Component({
   selector: 'app-pixi-demo',
@@ -25,15 +28,15 @@ export class PixiDemoComponent implements AfterViewInit {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
-      const redPlayer = getPlayer(0, 0, 'jersey_red.png', 2);
-      const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 3);
-      let puck = getPuck(RINK_LENGTH_PX / 2, RINK_WIDTH_PX / 2);
+      const redPlayer = getPlayer(0, 0, 'jersey_red.png', 80);
+      const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70);
+      const puck = getPuck(RINK_LENGTH_PX / 2, RINK_WIDTH_PX / 2);
 
-      app.stage.addChild(backgroundRink, rinkBorder, redPlayer, bluePlayer, puck);
+      app.stage.addChild(backgroundRink, rinkBorder, /*redPlayer, bluePlayer,*/ puck);
 
       const mouseCoords = { x: 0, y: 0 };
       app.stage.eventMode = 'static';
-      app.stage.hitArea = app.screen;
+      app.stage.hitArea = rinkBorder.currentPath;
 
       app.stage.on('mousemove', (event) => {
         mouseCoords.x = event.global.x;
@@ -41,42 +44,49 @@ export class PixiDemoComponent implements AfterViewInit {
       });
 
       app.ticker.add((delta) => {
-        // bluePlayer.rotation += 0.03 * delta;
-        // puck.transform.position.x += 1;
-        redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.99, redPlayer.acceleration.y * 0.99);
-        bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.99, bluePlayer.acceleration.y * 0.99);
+        puck.acceleration?.set(puck.acceleration.x * PUCK_DRAG_RATIO, puck.acceleration.y * PUCK_DRAG_RATIO);
 
-        if (bluePlayer.x < 0 || bluePlayer.x > (app.screen.width - 100)) {
-          bluePlayer.acceleration!.x = -bluePlayer.acceleration!.x;
+        if (Math.abs(puck.x) > RINK_LENGTH_PX / 2 - PUCK_RADIUS_PX * 2) {
+          puck.acceleration!.x = -puck.acceleration!.x;
         }
 
-        if (bluePlayer.y < 0 || bluePlayer.y > (app.screen.height - 100)) {
-          bluePlayer.acceleration!.y = -bluePlayer.acceleration!.y;
+        if (Math.abs(puck.y) > RINK_WIDTH_PX / 2 - PUCK_RADIUS_PX * 2) {
+          puck.acceleration!.y = -puck.acceleration!.y;
         }
 
-        if ((bluePlayer.x < -30 || bluePlayer.x > (app.screen.width + 30)) || bluePlayer.y < -30 || bluePlayer.y > (app.screen.height + 30)) {
-          bluePlayer.position.set((app.screen.width - 100) / 2, (app.screen.height - 100) / 2);
-        }
+        puck.x += puck.acceleration!.x * delta;
+        puck.y += puck.acceleration!.y * delta;
 
-        if (app.screen.width > mouseCoords.x || mouseCoords.x > 0 || app.screen.height > mouseCoords.y || mouseCoords.y > 0) {
-          const redSquareCenterPosition = new Point(redPlayer.x + (redPlayer.width * 0.5), redPlayer.y + (redPlayer.height * 0.5));
-          const toMouseDirection = new Point(mouseCoords.x - redSquareCenterPosition.x, mouseCoords.y - redSquareCenterPosition.y);
-          const angleToMouse = Math.atan2(toMouseDirection.y, toMouseDirection.x);
-          const distMouseRedSquare = distance(mouseCoords, redSquareCenterPosition);
-          const redSpeed = distMouseRedSquare * movementSpeed;
-          redPlayer.acceleration?.set(Math.cos(angleToMouse) * redSpeed, Math.sin(angleToMouse) * redSpeed);
-        }
+        // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
+        // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
 
-        if (testForAABB(bluePlayer, redPlayer)) {
-          const collisionPush = collisionResponse(bluePlayer, redPlayer);
-          redPlayer.acceleration?.set((collisionPush.x * (bluePlayer.mass ?? 0)), (collisionPush.y * (bluePlayer.mass ?? 0)));
-          bluePlayer.acceleration?.set(-(collisionPush.x * (redPlayer.mass ?? 0)), -(collisionPush.y * (redPlayer.mass ?? 0)));
-        }
+        // if (bluePlayer.x < 0 || bluePlayer.x > RINK_LENGTH_PX) {
+        //   bluePlayer.acceleration!.x = -bluePlayer.acceleration!.x;
+        // }
 
-        bluePlayer.x += bluePlayer.acceleration!.x * delta;
-        bluePlayer.y += bluePlayer.acceleration!.y * delta;
-        redPlayer.x += redPlayer.acceleration!.x * delta;
-        redPlayer.y += redPlayer.acceleration!.y * delta;
+        // if (bluePlayer.y < 0 || bluePlayer.y > RINK_WIDTH_PX) {
+        //   bluePlayer.acceleration!.y = -bluePlayer.acceleration!.y;
+        // }
+
+        // if (RINK_LENGTH_PX > mouseCoords.x || mouseCoords.x > 0 || RINK_WIDTH_PX > mouseCoords.y || mouseCoords.y > 0) {
+        //   const redSquareCenterPosition = new Point(redPlayer.x + (redPlayer.width * 0.5), redPlayer.y + (redPlayer.height * 0.5));
+        //   const toMouseDirection = new Point(mouseCoords.x - redSquareCenterPosition.x, mouseCoords.y - redSquareCenterPosition.y);
+        //   const angleToMouse = Math.atan2(toMouseDirection.y, toMouseDirection.x);
+        //   const distMouseRedSquare = distance(mouseCoords, redSquareCenterPosition);
+        //   const redSpeed = distMouseRedSquare * playerSpeed;
+        //   redPlayer.acceleration?.set(Math.cos(angleToMouse) * redSpeed, Math.sin(angleToMouse) * redSpeed);
+        // }
+
+        // if (testForAABB(bluePlayer, redPlayer)) {
+        //   const collisionPush = collisionResponse(bluePlayer, redPlayer);
+        //   redPlayer.acceleration?.set((collisionPush.x * (bluePlayer.mass ?? 0)), (collisionPush.y * (bluePlayer.mass ?? 0)));
+        //   bluePlayer.acceleration?.set(-(collisionPush.x * (redPlayer.mass ?? 0)), -(collisionPush.y * (redPlayer.mass ?? 0)));
+        // }
+
+        // bluePlayer.x += bluePlayer.acceleration!.x * delta;
+        // bluePlayer.y += bluePlayer.acceleration!.y * delta;
+        // redPlayer.x += redPlayer.acceleration!.x * delta;
+        // redPlayer.y += redPlayer.acceleration!.y * delta;
       });
     });
   }
@@ -123,17 +133,19 @@ function getPlayer(x: number, y: number, imageName?: string, mass?: number): Col
   player.width = PLAYER_SIZE_PX;
   player.height = PLAYER_SIZE_PX;
   player.acceleration = new Point(0);
-  player.mass = 3;
+  player.mass = mass;
 
   return player;
 }
 
-function getPuck(x: number, y: number): Graphics {
-  const puck = new Graphics();
+function getPuck(x: number, y: number): CollidedGraphics {
+  const puck: CollidedGraphics = new Graphics();
   puck.lineStyle(1, '#666');
   puck.beginFill('#222');
   puck.drawCircle(x, y, PUCK_RADIUS_PX);
   puck.endFill();
+  puck.acceleration = new Point(30, 30);
+  puck.mass = 0.3;
 
   return puck;
 }
@@ -155,7 +167,7 @@ function collisionResponse(object1: CollidedSprite, object2: CollidedSprite): Po
   const vCollisionNorm = new Point(vCollision.x / distance, vCollision.y / distance);
   const vRelativeVelocity = new Point(object1.acceleration!.x - object2.acceleration!.x, object1.acceleration!.y - object2.acceleration!.y);
   const speed = vRelativeVelocity.x * vCollisionNorm.x + vRelativeVelocity.y * vCollisionNorm.y;
-  const impulse = impulsePower * speed / (object1.mass! + object2.mass!);
+  const impulse = playerImpulse * speed / (object1.mass! + object2.mass!);
 
   return new Point(impulse * vCollisionNorm.x, impulse * vCollisionNorm.y);
 }
