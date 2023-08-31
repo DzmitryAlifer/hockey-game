@@ -1,38 +1,38 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
-import { Application, Container, Sprite, Texture } from 'pixi.js';
+import { Application, Assets, BaseTexture, BLEND_MODES, Container, Rectangle, Sprite, Texture } from 'pixi.js';
+import { RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
+import * as PIXI from 'pixi.js';
 
 @Component({
   selector: 'app-pixi-demo',
   standalone: true,
-  template: '<canvas #canvas></canvas>',
+  template: '',
 })
 export class PixiDemoComponent implements AfterViewInit {
   @ViewChild('canvas') canvas!: ElementRef;
-  
-  constructor(private readonly zone: NgZone) {}
+
+  constructor(private readonly elementRef: ElementRef, private readonly zone: NgZone) {}
 
   ngAfterViewInit(): void {
-    this.zone.runOutsideAngular((): void => {
-      const app = new Application({ background: 'gray', resizeTo: window, view: this.canvas.nativeElement });
-      const container = new Container();
-      app.stage.addChild(container);
-      const texture = Texture.from('https://pixijs.com/assets/bunny.png');
+    this.zone.runOutsideAngular(async () => {
+      const app = new Application<HTMLCanvasElement>({ background: 'grey', resizeTo: window, resolution: 1 });
+      this.elementRef.nativeElement.appendChild(app.view);
 
-      for (let i = 0; i < 25; i++) {
-        const bunny = new Sprite(texture);
-        bunny.anchor.set(0.5);
-        bunny.x = (i % 5) * 40;
-        bunny.y = Math.floor(i / 5) * 40;
-        container.addChild(bunny);
-      }
+      const backgroundRink = Sprite.from(await Assets.load('../../assets/images/rink.svg'), { multisample: 8 });
+      backgroundRink.height = RINK_WIDTH_PX;
+      backgroundRink.width = RINK_LENGTH_PX;
+      
+      app.stage.addChild(backgroundRink);
 
-      container.x = app.screen.width / 2;
-      container.y = app.screen.height / 2;
-      container.pivot.x = container.width / 2;
-      container.pivot.y = container.height / 2;
+      const player = Sprite.from('../../assets/images/jersey_red.png');
+      app.stage.addChild(player);
+      
+      player.anchor.set(0.5);
+      player.x = RINK_LENGTH_PX / 2;
+      player.y = RINK_WIDTH_PX / 2;
 
       app.ticker.add((delta) => {
-        container.rotation -= 0.01 * delta;
+        player.rotation += 0.05 * delta;
       });
     });
   }

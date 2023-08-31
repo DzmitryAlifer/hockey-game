@@ -20,6 +20,7 @@
     "@angular/platform-browser": "^16.0.0",
     "@angular/platform-browser-dynamic": "^16.0.0",
     "@angular/router": "^16.0.0",
+    "@box2d/core": "^0.10.0",
     "@pixi/app": "^7.2.4",
     "@pixi/core": "7.2.4",
     "@pixi/display": "7.2.4",
