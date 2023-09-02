@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
+import { circleLine } from 'intersects';
 
 interface Collided {
   acceleration?: Point;
@@ -12,6 +13,7 @@ type CollidedGraphics = Graphics & Collided;
 
 const playerSpeed = 0.05;
 const playerImpulse = 2;
+const speed = 0.2;
 
 @Component({
   selector: 'app-pixi-demo',
@@ -44,18 +46,19 @@ export class PixiDemoComponent implements AfterViewInit {
       });
 
       app.ticker.add((delta) => {
+        puck.x += puck.acceleration!.x * delta * speed * 2.4;
+        puck.y += puck.acceleration!.y * delta * speed;
+
         puck.acceleration?.set(puck.acceleration.x * PUCK_DRAG_RATIO, puck.acceleration.y * PUCK_DRAG_RATIO);
 
         if (Math.abs(puck.x) > RINK_LENGTH_PX / 2 - PUCK_RADIUS_PX * 2) {
           puck.acceleration!.x = -puck.acceleration!.x;
-        }
-
-        if (Math.abs(puck.y) > RINK_WIDTH_PX / 2 - PUCK_RADIUS_PX * 2) {
+        } else if (Math.abs(puck.y) > RINK_WIDTH_PX / 2 - PUCK_RADIUS_PX * 2) {
+          puck.acceleration!.y = -puck.acceleration!.y;
+        } else if (isCornerBounce(puck)) {
+          puck.acceleration!.x = -puck.acceleration!.x;
           puck.acceleration!.y = -puck.acceleration!.y;
         }
-
-        puck.x += puck.acceleration!.x * delta;
-        puck.y += puck.acceleration!.y * delta;
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
@@ -174,4 +177,13 @@ function collisionResponse(object1: CollidedSprite, object2: CollidedSprite): Po
 
 function distance(point1: IPointData, point2: IPointData): number {
   return Math.hypot(point1.x - point2.x, point1.y - point2.y);
+}
+
+function isCornerBounce(puck: CollidedGraphics): boolean {
+  const puckDetails: [number, number, number] = [puck.x, puck.y, PUCK_RADIUS_PX];
+
+  return circleLine(...puckDetails, 0 - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2) || 
+    circleLine(...puckDetails, RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2) || 
+    circleLine(...puckDetails, RINK_LENGTH_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2) || 
+    circleLine(...puckDetails, CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2, 0 - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2);
 }
