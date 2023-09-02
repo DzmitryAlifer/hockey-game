@@ -1,19 +1,40 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX } from 'src/utils/render';
-import { circleLine } from 'intersects';
+import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/utils/render';
+import { circleLine, polygonPoint, linePoint } from 'intersects';
+import { BoardPart } from 'src/types';
 
-interface Collided {
+interface Movable {
+  speed: number;
+  shiftX: number;
+  shiftY: number;
   acceleration?: Point;
   mass?: number;
 }
 
-type CollidedSprite = Sprite & Collided;
-type CollidedGraphics = Graphics & Collided;
+type MovableSprite = Sprite & Movable;
+type MovableGraphics = Graphics & Movable;
 
+const sin = Math.sin;
+const cos = Math.cos;
 const playerSpeed = 0.05;
 const playerImpulse = 2;
-const speed = 0.2;
+const speed = 0.13;
+
+const TOP_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(0, CORNER_SEGMENT_SIZE_PX).lineTo(CORNER_SEGMENT_SIZE_PX, 0);
+TOP_LEFT_SEGMENT.name = BoardPart.TopLeft;
+
+const TOP_RIGHT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, 0).lineTo(RINK_LENGTH_PX, CORNER_SEGMENT_SIZE_PX);
+TOP_RIGHT_SEGMENT.name = BoardPart.TopRight;
+
+const BOTTOM_RIGHT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(RINK_LENGTH_PX, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX).lineTo(RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX);
+BOTTOM_RIGHT_SEGMENT.name = BoardPart.BottomRight;
+
+const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX).lineTo(0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX);
+BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
+
+let bouncedBoard: BoardPart | null = null;
+let previousBouncedBoard: BoardPart | null = null;
 
 @Component({
   selector: 'app-pixi-demo',
@@ -32,33 +53,57 @@ export class PixiDemoComponent implements AfterViewInit {
       const rinkBorder = getRinkBorder();
       const redPlayer = getPlayer(0, 0, 'jersey_red.png', 80);
       const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70);
-      const puck = getPuck(RINK_LENGTH_PX / 2, RINK_WIDTH_PX / 2);
+      const puck = getPuck(850, 100, PI / 2 - 0.01, 30);
+      // const puck = getPuck(RINK_LENGTH_PX / 2 , RINK_WIDTH_PX / 2, PI / 2, 0);
 
-      app.stage.addChild(backgroundRink, rinkBorder, /*redPlayer, bluePlayer,*/ puck);
+      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, /*redPlayer, bluePlayer,*/ puck);
 
-      const mouseCoords = { x: 0, y: 0 };
-      app.stage.eventMode = 'static';
-      app.stage.hitArea = rinkBorder.currentPath;
+      // const mouseCoords = { x: 0, y: 0 };
+      // app.stage.eventMode = 'static';
+      // app.stage.hitArea = rinkBorder.currentPath;
 
-      app.stage.on('mousemove', (event) => {
-        mouseCoords.x = event.global.x;
-        mouseCoords.y = event.global.y;
-      });
+      // app.stage.on('mousemove', (event) => {
+      //   mouseCoords.x = event.global.x;
+      //   mouseCoords.y = event.global.y;
+      // });
 
       app.ticker.add((delta) => {
-        puck.x += puck.acceleration!.x * delta * speed * 2.4;
-        puck.y += puck.acceleration!.y * delta * speed;
+        puck.x += puck.shiftX;
+        puck.y += puck.shiftY;
 
-        puck.acceleration?.set(puck.acceleration.x * PUCK_DRAG_RATIO, puck.acceleration.y * PUCK_DRAG_RATIO);
+        const { left, right, top, bottom } = puck.getBounds();
 
-        if (Math.abs(puck.x) > RINK_LENGTH_PX / 2 - PUCK_RADIUS_PX * 2) {
-          puck.acceleration!.x = -puck.acceleration!.x;
-        } else if (Math.abs(puck.y) > RINK_WIDTH_PX / 2 - PUCK_RADIUS_PX * 2) {
-          puck.acceleration!.y = -puck.acceleration!.y;
-        } else if (isCornerBounce(puck)) {
-          puck.acceleration!.x = -puck.acceleration!.x;
-          puck.acceleration!.y = -puck.acceleration!.y;
+        if (!bouncedBoard) {
+          if (left <= PUCK_RADIUS_PX || right >= RINK_LENGTH_PX - PUCK_RADIUS_PX) {
+            bouncedBoard = BoardPart.Left; puck.shiftX = -puck.shiftX;
+          } else if (top <= PUCK_RADIUS_PX || bottom >= RINK_WIDTH_PX - PUCK_RADIUS_PX) {
+            bouncedBoard = BoardPart.Top; 
+            puck.shiftY = -puck.shiftY;
+          } else if (pointToCornerSegmentDistance(puck, TOP_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopRight) {
+            bouncedBoard = previousBouncedBoard = BoardPart.TopRight;
+            const temp = puck.shiftX;
+            puck.shiftX = puck.shiftY;
+            puck.shiftY = temp;
+          } else if (pointToCornerSegmentDistance(puck, BOTTOM_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomRight) {
+            bouncedBoard = previousBouncedBoard = BoardPart.BottomRight; 
+            const temp = puck.shiftX;
+            puck.shiftX = -puck.shiftY;
+            puck.shiftY = -temp;
+          } else if (pointToCornerSegmentDistance(puck, BOTTOM_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomLeft) {
+            bouncedBoard = previousBouncedBoard = BoardPart.BottomLeft;
+            const temp = puck.shiftX;
+            puck.shiftX = puck.shiftY;
+            puck.shiftY = temp;
+          } else if (pointToCornerSegmentDistance(puck, TOP_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopLeft) {
+            bouncedBoard = previousBouncedBoard = BoardPart.TopLeft; 
+            const temp = puck.shiftX;
+            puck.shiftX = -puck.shiftY;
+            puck.shiftY = -temp;
+          }
+        } else {
+          bouncedBoard = null;
         }
+       
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
@@ -128,8 +173,8 @@ function getRinkBorder(): Graphics {
   return rinkBorder;
 }
 
-function getPlayer(x: number, y: number, imageName?: string, mass?: number): CollidedSprite {
-  const player: CollidedSprite = Sprite.from(`../../assets/images/${imageName}`);
+function getPlayer(x: number, y: number, imageName?: string, mass?: number): MovableSprite {
+  const player = Sprite.from(`../../assets/images/${imageName}`) as MovableSprite;
   player.anchor.set(0.5);
   player.x = x;
   player.y = y;
@@ -141,14 +186,16 @@ function getPlayer(x: number, y: number, imageName?: string, mass?: number): Col
   return player;
 }
 
-function getPuck(x: number, y: number): CollidedGraphics {
-  const puck: CollidedGraphics = new Graphics();
-  puck.lineStyle(1, '#666');
+function getPuck(x: number, y: number, angle: number, speed: number): MovableGraphics {
+  const puck = new Graphics() as MovableGraphics;
+  puck.lineStyle(0, '#00f');
   puck.beginFill('#222');
   puck.drawCircle(x, y, PUCK_RADIUS_PX);
   puck.endFill();
-  puck.acceleration = new Point(30, 30);
-  puck.mass = 0.3;
+  puck.speed = speed;
+  const shift = speed / SPEED_TO_SHIFT_RATIO;
+  puck.shiftX = shift * cos(angle);
+  puck.shiftY = shift * sin(angle);
 
   return puck;
 }
@@ -163,7 +210,7 @@ function testForAABB(object1: Sprite, object2: Sprite): boolean {
       && bounds1.y + bounds1.height > bounds2.y;
 }
 
-function collisionResponse(object1: CollidedSprite, object2: CollidedSprite): Point {
+function collisionResponse(object1: MovableSprite, object2: MovableSprite): Point {
   if (!object1 || !object2) return new Point(0);
   const vCollision = new Point(object2.x - object1.x, object2.y - object1.y);
   const distance = Math.sqrt((object2.x - object1.x) * (object2.x - object1.x) + (object2.y - object1.y) * (object2.y - object1.y));
@@ -175,15 +222,53 @@ function collisionResponse(object1: CollidedSprite, object2: CollidedSprite): Po
   return new Point(impulse * vCollisionNorm.x, impulse * vCollisionNorm.y);
 }
 
-function distance(point1: IPointData, point2: IPointData): number {
+function pointToPointDistance(point1: IPointData, point2: IPointData): number {
   return Math.hypot(point1.x - point2.x, point1.y - point2.y);
 }
 
-function isCornerBounce(puck: CollidedGraphics): boolean {
-  const puckDetails: [number, number, number] = [puck.x, puck.y, PUCK_RADIUS_PX];
+function pointToSegmentDistance(p: IPointData, a: IPointData, b: IPointData): number {
+  const ab = [b.x - a.x, b.y - a.y];
+  const pb = [p.x - b.x, p.y - b.y];
+  const pa = [p.x - a.x, p.y - a.y];
+  const ab_pb = (ab[0] * pb[0] + ab[1] * pb[1]);
+  const ab_pa = (ab[0] * pa[0] + ab[1] * pa[1]);
+  let reqAns = 0;
 
-  return circleLine(...puckDetails, 0 - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2) || 
-    circleLine(...puckDetails, RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2) || 
-    circleLine(...puckDetails, RINK_LENGTH_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2) || 
-    circleLine(...puckDetails, CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2, 0 - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2);
+  if (ab_pb > 0) {
+    const y = p.y - b.y;
+    const x = p.x - b.x;
+    reqAns = Math.sqrt(x * x + y * y);
+  } else if (ab_pa < 0) {
+    const y = p.y - a.y;
+    const x = p.x - a.x;
+    reqAns = Math.sqrt(x * x + y * y);
+  } else {
+    const x1 = ab[0];
+    const y1 = ab[1];
+    const x2 = pa[0];
+    const y2 = pa[1];
+    reqAns = Math.abs(x1 * y2 - y1 * x2) / Math.sqrt(x1 * x1 + y1 * y1);
+  }
+
+  return reqAns;
+}
+
+function isCornerBounce(puck: MovableGraphics): boolean {
+  const { left, top} = puck.getBounds(); 
+  const puckDetails: [number, number, number] = [left + PUCK_RADIUS_PX, top + PUCK_RADIUS_PX, PUCK_RADIUS_PX];
+  const isTopLeftCorner = linePoint(0 - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2, ...puckDetails);
+  const isTopRightCorner = linePoint(RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, 0 - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - RINK_LENGTH_PX / 2, CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, ...puckDetails);
+  const isBottomRightCorner = linePoint(RINK_LENGTH_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, RINK_LENGTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2, ...puckDetails);
+  const isBottomLeftCorner = linePoint(CORNER_SEGMENT_SIZE_PX - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - RINK_WIDTH_PX / 2, 0 - RINK_LENGTH_PX / 2, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX - RINK_WIDTH_PX / 2, ...puckDetails);
+  
+  return isTopLeftCorner || isTopRightCorner || isBottomRightCorner || isBottomLeftCorner;
+}
+
+function pointToCornerSegmentDistance(puck: Graphics, cornerSegment: Graphics): number {
+  const { x, y } = puck.getBounds();
+  const { left, right, top, bottom } = cornerSegment.getBounds();
+  
+  return [BoardPart.TopRight, BoardPart.BottomLeft].includes(cornerSegment.name as BoardPart) ? 
+    pointToSegmentDistance({ x: x + PUCK_RADIUS_PX, y: y + PUCK_RADIUS_PX }, { x: left, y: top }, { x: right, y: bottom }) :
+    pointToSegmentDistance({ x: x + PUCK_RADIUS_PX, y: y + PUCK_RADIUS_PX }, { x: left, y: bottom }, { x: right, y: top });
 }

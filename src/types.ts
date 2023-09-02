@@ -21,12 +21,12 @@ export interface Player extends Movable {
 }
 
 export enum BoardPart {
-    Left,
-    Top,
-    Right,
-    Bottom,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
+    Left = 'l',
+    Top = 't',
+    Right = 'r',
+    Bottom = 'b',
+    TopLeft = 'tl',
+    TopRight = 'tr',
+    BottomLeft = 'bl',
+    BottomRight = 'br',
 }
