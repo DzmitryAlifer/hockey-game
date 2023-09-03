@@ -1,4 +1,4 @@
-import { BoardPart, Movable, Player, Point, Puck } from '../types';
+import { BoardPart, Movable, Point, Puck } from '../types';
 
 export const PI = Math.PI;
 export const PUCK_RADIUS_PX = 4;
@@ -166,18 +166,6 @@ function getSegmentDist(point: Point, segmentStart: Point, segmentEnd: Point): n
 
 export function calculateShift(speed: number, angle: number): Point {
     return { x: Math.cos(angle) * speed / SPEED_TO_SHIFT_RATIO, y: Math.sin(angle) * speed / SPEED_TO_SHIFT_RATIO };
-}
-
-export function calculatePlayerShift({ point, destination, speed }: Player): Point {
-    const dx = destination!.x - point.x;
-    const dy = destination!.y - point.y;
-    const angle = PI / 2 - Math.atan(dx / dy) + (dy < 0 ? PI : 0);
-    const { x, y } = calculateShift(speed!, angle);
-
-    return {
-        x: Math.abs(x) < Math.abs(dx) ? x : 0,
-        y: Math.abs(y) < Math.abs(dy) ? y : 0, 
-    };
 }
 
 export function getRandomInRange(min: number, max: number): number {
