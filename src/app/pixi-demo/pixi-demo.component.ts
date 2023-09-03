@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common'; 
-import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift, getRandomInRange } from 'src/utils/render';
-import { circleLine, polygonPoint, linePoint } from 'intersects';
+import { linePoint } from 'intersects';
 import { BoardPart } from 'src/types';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 interface Movable {
   speed: number;
