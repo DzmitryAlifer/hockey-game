@@ -54,10 +54,10 @@ export class PixiDemoComponent implements AfterViewInit {
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
       const redPlayer = getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 80, 25);
-      const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70);
+      const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70, 22);
       const puck = getPuck(830, 100, PI / 2 - 1.03, 30);
 
-      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, redPlayer, /*bluePlayer,*/ puck);
+      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, redPlayer, bluePlayer, puck);
 
       // const mouseCoords = { x: 0, y: 0 };
       // app.stage.eventMode = 'static';
@@ -71,6 +71,7 @@ export class PixiDemoComponent implements AfterViewInit {
       app.ticker.add((delta) => {
         calculatePuckPosition(puck, bouncedBoard);
         calculatePlayerPosition(redPlayer, puck);
+        calculatePlayerPosition(bluePlayer, puck);
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
