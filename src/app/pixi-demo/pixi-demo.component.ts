@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
-import { BoardPart, Movable, MovableGraphics, MovableSprite } from 'src/types';
+import { BoardPart, Movable, MovableGraphics, Player } from 'src/types';
 
 enum Team {
   Red = 'Red',
@@ -30,7 +30,7 @@ BOTTOM_RIGHT_SEGMENT.name = BoardPart.BottomRight;
 const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX).lineTo(0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX);
 BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
 
-let playersOnIce: MovableSprite[] = [];
+let playersOnIce: Player[] = [];
 let bouncedBoard: BoardPart | null = null;
 let previousBouncedBoard: BoardPart | null = null;
 let isPuckCaught = false;
@@ -115,9 +115,9 @@ export class PixiDemoComponent implements AfterViewInit {
     return app;
   }
 
-  private checkPuckCatch(player: MovableSprite, currentPuck: MovableGraphics, app: Application): void {
+  private checkPuckCatch(player: Player, currentPuck: MovableGraphics, app: Application): void {
     if (!isPuckCaught && playerToPuckDistance(player, currentPuck) < PLAYER_SIZE_PX / 2) {
-      player.speed = currentPuck.speed = 0;
+      player.currentSpeed = currentPuck.currentSpeed = 0;
       isPuckCaught = true;
       player.team === Team.Red ? this.redTeamScore++ : this.blueTeamScore++;
 
@@ -163,15 +163,15 @@ function getRinkBorder(): Graphics {
   return rinkBorder;
 }
 
-function getPlayers(): MovableSprite[] {
+function getPlayers(): Player[] {
   return [
     getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
     getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
   ];
 }
 
-function getPlayer(x: number, y: number, imageName: string, team: string, mass: number, speed: number = 0): MovableSprite {
-  const player = Sprite.from(`../../assets/images/${imageName}`) as MovableSprite;
+function getPlayer(x: number, y: number, imageName: string, team: string, mass: number, speed: number = 0): Player {
+  const player = Sprite.from(`../../assets/images/${imageName}`) as Player;
   player.anchor.set(0.5);
   player.x = x;
   player.y = y;
@@ -179,7 +179,7 @@ function getPlayer(x: number, y: number, imageName: string, team: string, mass: 
   player.shiftY = 0;
   player.width = PLAYER_SIZE_PX;
   player.height = PLAYER_SIZE_PX;
-  player.speed = speed;
+  player.currentSpeed = speed;
   player.acceleration = new Point(0);
   player.mass = mass;
   player.team = team;
@@ -197,7 +197,7 @@ function getPuck(x: number, y: number, angle: number, speed: number): MovableGra
   puck.beginFill('#222');
   puck.drawCircle(x, y, PUCK_RADIUS_PX);
   puck.endFill();
-  puck.speed = speed;
+  puck.currentSpeed = speed;
   const shift = speed / SPEED_TO_SHIFT_RATIO;
   puck.shiftX = shift * cos(angle);
   puck.shiftY = shift * sin(angle);
@@ -215,7 +215,7 @@ function testForAABB(object1: Sprite, object2: Sprite): boolean {
       && bounds1.y + bounds1.height > bounds2.y;
 }
 
-function collisionResponse(object1: MovableSprite, object2: MovableSprite): Point {
+function collisionResponse(object1: Player, object2: Player): Point {
   if (!object1 || !object2) return new Point(0);
   const vCollision = new Point(object2.x - object1.x, object2.y - object1.y);
   const distance = Math.sqrt((object2.x - object1.x) * (object2.x - object1.x) + (object2.y - object1.y) * (object2.y - object1.y));
@@ -227,7 +227,7 @@ function collisionResponse(object1: MovableSprite, object2: MovableSprite): Poin
   return new Point(impulse * vCollisionNorm.x, impulse * vCollisionNorm.y);
 }
 
-function playerToPuckDistance(player: MovableSprite, puck: MovableGraphics): number {
+function playerToPuckDistance(player: Player, puck: MovableGraphics): number {
   const playerBounds = player.getBounds();
   const puckBounds = puck.getBounds();
   const deltaX = (playerBounds.left + playerBounds.right) / 2 - (puckBounds.left + puckBounds.right) / 2;
@@ -284,11 +284,11 @@ function pointToCornerSegmentDistance(puck: Graphics, cornerSegment: Graphics): 
 }
 
 function updatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | null): void {
-  if (abs(puck.shiftX) < PUCK_MIN_SHIFT_PX && abs(puck.shiftY) < PUCK_MIN_SHIFT_PX || puck.speed < 0.5) {
-    puck.shiftX = puck.shiftY = puck.speed = 0;
+  if (abs(puck.shiftX) < PUCK_MIN_SHIFT_PX && abs(puck.shiftY) < PUCK_MIN_SHIFT_PX || puck.currentSpeed < 0.5) {
+    puck.shiftX = puck.shiftY = puck.currentSpeed = 0;
   }
 
-  puck.speed *= PUCK_DRAG_RATIO;
+  puck.currentSpeed *= PUCK_DRAG_RATIO;
   puck.shiftX *= PUCK_DRAG_RATIO;
   puck.shiftY *= PUCK_DRAG_RATIO;
   puck.x += puck.shiftX;
@@ -328,14 +328,14 @@ function updatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | nul
   }
 }
 
-function updatePlayerPosition(player: MovableSprite, target: MovableGraphics): void {
+function updatePlayerPosition(player: Player, target: MovableGraphics): void {
   player.x += player.shiftX;
   player.y += player.shiftY;
 
   const { left, right, top, bottom } = target.getBounds();
   const targetX = (left + right) / 2;
   const targetY = (top + bottom) / 2;
-  const shift = player.speed / SPEED_TO_SHIFT_RATIO;
+  const shift = player.currentSpeed / SPEED_TO_SHIFT_RATIO;
   const angle = atan2(targetY - player.y, targetX - player.x);
   player.shiftX = shift * cos(angle);
   player.shiftY = shift * sin(angle);

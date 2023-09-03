@@ -1,13 +1,5 @@
 import { Sprite, Graphics, Point } from 'pixi.js';
 
-export interface PlayerPerson extends Movable {
-    team: string;
-    id?: string;
-    name?: string;
-    number?: number;
-    hasPuck?: boolean;
-}
-
 export enum BoardPart {
     Left = 'l',
     Top = 't',
@@ -20,14 +12,29 @@ export enum BoardPart {
 }
 
 export interface Movable {
-    speed: number;
+    currentSpeed: number;
     shiftX: number;
     shiftY: number;
     acceleration?: Point;
     mass?: number;
-    team?: string;
 }
 
+export interface PlayerSkills {
+    speed: number;
+    strength: number;
+}
 
-export type MovableSprite = Sprite & Movable;
+export interface PlayerStatus {
+    hasPuck?: boolean;
+    isOnIce?: boolean;
+}
+
+export interface PlayerPerson {
+    team?: string;
+    id?: string;
+    name?: string;
+    number?: number;
+}
+
+export type Player = Sprite & Movable & PlayerSkills & PlayerStatus & PlayerPerson;
 export type MovableGraphics = Graphics & Movable;
