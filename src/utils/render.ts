@@ -12,7 +12,8 @@ export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
 export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 30;
 export const PUCK_SPEED_DECREASE_RATIO = 0.02;
-export const PUCK_DRAG_RATIO = 0.97;
+export const PUCK_MIN_SHIFT_PX = 0.5;
+export const PUCK_DRAG_RATIO = 0.99;
 export const SPEED_TO_SHIFT_RATIO = 10;
 export const CLOSE_DISTANCE_PX = PLAYER_SIZE_PX / 2;
 

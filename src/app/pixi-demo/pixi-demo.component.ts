@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift } from 'src/utils/render';
+import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift } from 'src/utils/render';
 import { circleLine, polygonPoint, linePoint } from 'intersects';
 import { BoardPart } from 'src/types';
 
@@ -54,8 +54,8 @@ export class PixiDemoComponent implements AfterViewInit {
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
       const redPlayer = getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 80, 25);
-      const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70, 22);
-      const puck = getPuck(830, 100, PI / 2 - 1.03, 30);
+      const bluePlayer =  getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70, 22);
+      const puck = getPuck(830, 100, PI / 2 - 1.03, 200);
 
       app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, redPlayer, bluePlayer, puck);
 
@@ -245,6 +245,13 @@ function pointToCornerSegmentDistance(puck: Graphics, cornerSegment: Graphics): 
 }
 
 function calculatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | null): void {
+  if (abs(puck.shiftX) < PUCK_MIN_SHIFT_PX && abs(puck.shiftY) < PUCK_MIN_SHIFT_PX) {
+    puck.shiftX = 0;
+    puck.shiftY = 0;
+  }
+
+  puck.shiftX *= PUCK_DRAG_RATIO;
+  puck.shiftY *= PUCK_DRAG_RATIO;
   puck.x += puck.shiftX;
   puck.y += puck.shiftY;
 
