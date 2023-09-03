@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common'; 
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Text, TextStyle } from 'pixi.js';
+import { Application, Assets, Container, Graphics, IPointData, Point, Sprite, Text } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
-import { BoardPart, Movable, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
+import { BoardPart, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
 
 enum Team {
   Red = 'red',
@@ -35,8 +35,7 @@ const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [
   { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 },
 ];
 
-let playersOnIce: Player[] = [];
-let textsOnIce: Text[] = [];
+let playersContainers: Container[] = [];
 let bouncedBoard: BoardPart | null = null;
 let previousBouncedBoard: BoardPart | null = null;
 let isPuckCaught = false;
@@ -53,7 +52,7 @@ export class PixiDemoComponent implements AfterViewInit {
   redTeamScore = 0;
   blueTeamScore = 0;
 
-  constructor(private readonly elementRef: ElementRef, private readonly zone: NgZone) {}
+  constructor(private readonly elementRef: ElementRef) {}
 
   async ngAfterViewInit(): Promise<void> {
       const app = this.getApp();
@@ -73,9 +72,11 @@ export class PixiDemoComponent implements AfterViewInit {
 
       app.ticker.add((delta) => {
         updatePuckPosition(puck, bouncedBoard);
-        
-        playersOnIce.forEach(player => {
-          updatePlayerPosition(player, puck);
+
+        playersContainers.forEach(playerContainer => {
+          const player = playerContainer.getChildAt(0) as Player;
+          const text = playerContainer.getChildAt(1) as Text;
+          updatePlayerPosition(player, text, puck);
           this.checkPuckCatch(player, puck, app);
         });
 
@@ -126,7 +127,7 @@ export class PixiDemoComponent implements AfterViewInit {
       player.team === Team.Red ? this.redTeamScore++ : this.blueTeamScore++;
 
       setTimeout(() => {
-        app.stage.removeChild(...playersOnIce, ...textsOnIce, currentPuck);
+        app.stage.removeChild(...playersContainers, currentPuck);
         app.ticker.stop();
       }, 1000);
 
@@ -163,13 +164,6 @@ function getRinkBorder(): Graphics {
   );
 
   return rinkBorder;
-}
-
-function getPlayers(): Player[] {
-  return [
-    getPlayer(getRandomInRange(0, RINK_LENGTH_PX), getRandomInRange(0, RINK_WIDTH_PX), { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 }),
-    getPlayer(getRandomInRange(0, RINK_LENGTH_PX), getRandomInRange(0, RINK_WIDTH_PX), { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 }),
-  ];
 }
 
 function getPlayer(x: number, y: number, playerData: PlayerPerson & PlayerSkills): Player {
@@ -331,9 +325,11 @@ function updatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | nul
   }
 }
 
-function updatePlayerPosition(player: Player, target: MovableGraphics): void {
+function updatePlayerPosition(player: Player, text: Text, target: MovableGraphics): void {
   player.x += player.shiftX;
   player.y += player.shiftY;
+  text.x += player.shiftX;
+  text.y += player.shiftY;
 
   const { left, right, top, bottom } = target.getBounds();
   const targetX = (left + right) / 2;
@@ -349,21 +345,25 @@ function getRandomInRange(min: number, max: number): number {
 }
 
 function setupStageWithPlayers(app: Application): void {
+  playersContainers = getPlayerContainers(PLAYERS_SETUP);
   puck = getPuckRandom();
+  app.stage.addChild(...playersContainers, puck);
+}
 
-  playersOnIce =[];
-  textsOnIce =[];
+function getPlayerContainers(playersSetup: (PlayerPerson & PlayerSkills)[]): Container[] {
+  const containers: Container[] = [];
 
-  PLAYERS_SETUP.forEach(playerSetup => {
+  playersSetup.forEach(playerSetup => {
+    const container = new Container();
     const x = getRandomInRange(0, RINK_LENGTH_PX);
     const y = getRandomInRange(0, RINK_WIDTH_PX);
-    const player = getPlayer(x, y, playerSetup);
-    playersOnIce.push(player);
     const text = new Text(`${playerSetup.fieldPosition} ${playerSetup.number}`, { fontSize: '10px', fontWeight: 'bold' });
+    text.anchor.set(0.5);
     text.x = x;
     text.y = y + 20;
-    textsOnIce.push(text);
+    container.addChild(getPlayer(x, y, playerSetup), text);
+    containers.push(container);
   });
 
-  app.stage.addChild(...playersOnIce, ...textsOnIce, puck);
+  return containers;
 }
