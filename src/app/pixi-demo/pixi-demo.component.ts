@@ -29,9 +29,7 @@ const cos = Math.cos;
 const atan2 = Math.atan2;
 const abs = Math.abs;
 const hypot = Math.hypot;
-const playerSpeed = 0.05;
 const playerImpulse = 2;
-const speed = 0.13;
 
 const TOP_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(0, CORNER_SEGMENT_SIZE_PX).lineTo(CORNER_SEGMENT_SIZE_PX, 0);
 TOP_LEFT_SEGMENT.name = BoardPart.TopLeft;
@@ -68,10 +66,7 @@ export class PixiDemoComponent implements AfterViewInit {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
-      playersOnIce = [
-        getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
-        getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
-      ]
+      playersOnIce = getPlayers();
       puck = getPuckRandom();
 
       app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, ...playersOnIce, puck);
@@ -146,10 +141,7 @@ export class PixiDemoComponent implements AfterViewInit {
 
       setTimeout(() => {
         puck = getPuckRandom();
-        playersOnIce = [
-          getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
-          getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
-        ];
+        playersOnIce = getPlayers();
         app.stage.addChild(...playersOnIce, puck);
         app.ticker.start();
         isPuckCaught = false;
@@ -182,6 +174,13 @@ function getRinkBorder(): Graphics {
   );
 
   return rinkBorder;
+}
+
+function getPlayers(): MovableSprite[] {
+  return [
+    getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
+    getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
+  ];
 }
 
 function getPlayer(x: number, y: number, imageName: string, team: string, mass: number, speed: number = 0): MovableSprite {
