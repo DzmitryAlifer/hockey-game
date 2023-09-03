@@ -69,9 +69,9 @@ export class PixiDemoComponent implements AfterViewInit {
       // });
 
       app.ticker.add((delta) => {
-        calculatePuckPosition(puck, bouncedBoard);
-        calculatePlayerPosition(redPlayer, puck);
-        calculatePlayerPosition(bluePlayer, puck);
+        updatePuckPosition(puck, bouncedBoard);
+        updatePlayerPosition(redPlayer, puck);
+        updatePlayerPosition(bluePlayer, puck);
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
@@ -171,6 +171,13 @@ function getPuck(x: number, y: number, angle: number, speed: number): MovableGra
   return puck;
 }
 
+function updatePuckShift(puck: MovableGraphics, angle: number): void {
+  puck.speed *= PUCK_DRAG_RATIO;
+  const shift = puck.speed / SPEED_TO_SHIFT_RATIO;
+  puck.shiftX = shift * cos(angle);
+  puck.shiftY = shift * sin(angle);
+}
+
 function testForAABB(object1: Sprite, object2: Sprite): boolean {
   const bounds1 = object1.getBounds();
   const bounds2 = object2.getBounds();
@@ -244,12 +251,12 @@ function pointToCornerSegmentDistance(puck: Graphics, cornerSegment: Graphics): 
     pointToSegmentDistance({ x: x + PUCK_RADIUS_PX, y: y + PUCK_RADIUS_PX }, { x: left, y: bottom }, { x: right, y: top });
 }
 
-function calculatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | null): void {
-  if (abs(puck.shiftX) < PUCK_MIN_SHIFT_PX && abs(puck.shiftY) < PUCK_MIN_SHIFT_PX) {
-    puck.shiftX = 0;
-    puck.shiftY = 0;
+function updatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | null): void {
+  if (abs(puck.shiftX) < PUCK_MIN_SHIFT_PX && abs(puck.shiftY) < PUCK_MIN_SHIFT_PX || puck.speed < 0.5) {
+    puck.shiftX = puck.shiftY = puck.speed = 0;
   }
 
+  puck.speed *= PUCK_DRAG_RATIO;
   puck.shiftX *= PUCK_DRAG_RATIO;
   puck.shiftY *= PUCK_DRAG_RATIO;
   puck.x += puck.shiftX;
@@ -289,7 +296,7 @@ function calculatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | 
   }
 }
 
-function calculatePlayerPosition(player: MovableSprite, target: MovableGraphics): void {
+function updatePlayerPosition(player: MovableSprite, target: MovableGraphics): void {
   player.x += player.shiftX;
   player.y += player.shiftY;
 
