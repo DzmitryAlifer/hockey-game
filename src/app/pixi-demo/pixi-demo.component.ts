@@ -5,7 +5,7 @@ import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift, getRandomInRange } from 'src/utils/render';
 import { circleLine, polygonPoint, linePoint } from 'intersects';
 import { BoardPart } from 'src/types';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 interface Movable {
   speed: number;
@@ -14,6 +14,11 @@ interface Movable {
   acceleration?: Point;
   mass?: number;
   team?: string;
+}
+
+enum Team {
+  Red = 'Red',
+  Blue = 'Blue',
 }
 
 type MovableSprite = Sprite & Movable;
@@ -54,13 +59,12 @@ let puck: MovableGraphics;
   styleUrls: ['./pixi-demo.component.scss'],
 })
 export class PixiDemoComponent implements AfterViewInit {
-  redTeamCount = 0;
-  blueTeamCount = 0;
+  redTeamScore = 0;
+  blueTeamScore = 0;
 
   constructor(private readonly elementRef: ElementRef, private readonly zone: NgZone) {}
 
-  ngAfterViewInit(): void {
-    this.zone.runOutsideAngular(async () => {
+  async ngAfterViewInit(): Promise<void> {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
@@ -120,7 +124,6 @@ export class PixiDemoComponent implements AfterViewInit {
         // redPlayer.x += redPlayer.acceleration!.x * delta;
         // redPlayer.y += redPlayer.acceleration!.y * delta;
       });
-    });
   }
 
   private getApp(): Application {
@@ -134,12 +137,7 @@ export class PixiDemoComponent implements AfterViewInit {
     if (!isPuckCaught && playerToPuckDistance(player, currentPuck) < PLAYER_SIZE_PX / 2) {
       player.speed = currentPuck.speed = 0;
       isPuckCaught = true;
-      
-      if (player.team === 'Red') {
-        this.redTeamCount = this.redTeamCount + 1;
-      } else {
-        this.blueTeamCount = this.blueTeamCount + 1;
-      }
+      player.team === Team.Red ? this.redTeamScore++ : this.blueTeamScore++;
 
       setTimeout(() => {
         app.stage.removeChild(...playersOnIce, currentPuck);
