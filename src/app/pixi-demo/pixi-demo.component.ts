@@ -36,6 +36,7 @@ const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [
 ];
 
 let playersOnIce: Player[] = [];
+let textsOnIce: Text[] = [];
 let bouncedBoard: BoardPart | null = null;
 let previousBouncedBoard: BoardPart | null = null;
 let isPuckCaught = false;
@@ -58,10 +59,8 @@ export class PixiDemoComponent implements AfterViewInit {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
-      playersOnIce = getPlayers();
-      puck = getPuckRandom();
-
-      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, ...playersOnIce, puck);
+      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT/*, ...playersOnIce, puck*/);
+      setupStageWithPlayers(app);
 
       // const mouseCoords = { x: 0, y: 0 };
       // app.stage.eventMode = 'static';
@@ -127,14 +126,12 @@ export class PixiDemoComponent implements AfterViewInit {
       player.team === Team.Red ? this.redTeamScore++ : this.blueTeamScore++;
 
       setTimeout(() => {
-        app.stage.removeChild(...playersOnIce, currentPuck);
+        app.stage.removeChild(...playersOnIce, ...textsOnIce, currentPuck);
         app.ticker.stop();
       }, 1000);
 
       setTimeout(() => {
-        puck = getPuckRandom();
-        playersOnIce = getPlayers();
-        app.stage.addChild(...playersOnIce, puck);
+        setupStageWithPlayers(app);
         app.ticker.start();
         isPuckCaught = false;
       }, 2000);
@@ -170,8 +167,8 @@ function getRinkBorder(): Graphics {
 
 function getPlayers(): Player[] {
   return [
-    getPlayer(100, RINK_WIDTH_PX / 2, { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 }),
-    getPlayer(600, RINK_WIDTH_PX / 2, { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 }),
+    getPlayer(getRandomInRange(0, RINK_LENGTH_PX), getRandomInRange(0, RINK_WIDTH_PX), { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 }),
+    getPlayer(getRandomInRange(0, RINK_LENGTH_PX), getRandomInRange(0, RINK_WIDTH_PX), { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 }),
   ];
 }
 
@@ -349,4 +346,24 @@ function updatePlayerPosition(player: Player, target: MovableGraphics): void {
 
 function getRandomInRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+function setupStageWithPlayers(app: Application): void {
+  puck = getPuckRandom();
+
+  playersOnIce =[];
+  textsOnIce =[];
+
+  PLAYERS_SETUP.forEach(playerSetup => {
+    const x = getRandomInRange(0, RINK_LENGTH_PX);
+    const y = getRandomInRange(0, RINK_WIDTH_PX);
+    const player = getPlayer(x, y, playerSetup);
+    playersOnIce.push(player);
+    const text = new Text(`${playerSetup.fieldPosition} ${playerSetup.number}`, { fontSize: '10px', fontWeight: 'bold' });
+    text.x = x;
+    text.y = y + 20;
+    textsOnIce.push(text);
+  });
+
+  app.stage.addChild(...playersOnIce, ...textsOnIce, puck);
 }
