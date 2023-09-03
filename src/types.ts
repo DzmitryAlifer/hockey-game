@@ -11,6 +11,15 @@ export enum BoardPart {
     BottomRight = 'br',
 }
 
+export enum PlayerPosition {
+    C = 'C',
+    LW = 'WD',
+    RW = 'RW',
+    LD = 'LD',
+    RD = 'RD',
+    G = 'G',
+}
+
 export interface Movable {
     currentSpeed: number;
     shiftX: number;
@@ -22,6 +31,7 @@ export interface Movable {
 export interface PlayerSkills {
     speed: number;
     strength: number;
+    aggressiveness: number;
 }
 
 export interface PlayerStatus {
@@ -30,8 +40,9 @@ export interface PlayerStatus {
 }
 
 export interface PlayerPerson {
+    id?: string; 
     team?: string;
-    id?: string;
+    fieldPosition?: PlayerPosition;
     name?: string;
     number?: number;
 }

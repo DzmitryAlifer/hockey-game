@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common'; 
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
+import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Text, TextStyle } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
-import { BoardPart, Movable, MovableGraphics, Player } from 'src/types';
+import { BoardPart, Movable, MovableGraphics, Player, PlayerPerson, PlayerSkills } from 'src/types';
 
 enum Team {
   Red = 'Red',
@@ -165,12 +165,12 @@ function getRinkBorder(): Graphics {
 
 function getPlayers(): Player[] {
   return [
-    getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
-    getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
+    getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', { team: Team.Red, speed: 25, strength: 100, aggressiveness: 100 }),
+    getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', { team: Team.Blue, speed: 22, strength: 50, aggressiveness: 50 }),
   ];
 }
 
-function getPlayer(x: number, y: number, imageName: string, team: string, mass: number, speed: number = 0): Player {
+function getPlayer(x: number, y: number, imageName: string, playerData: PlayerPerson & PlayerSkills): Player {
   const player = Sprite.from(`../../assets/images/${imageName}`) as Player;
   player.anchor.set(0.5);
   player.x = x;
@@ -179,10 +179,10 @@ function getPlayer(x: number, y: number, imageName: string, team: string, mass: 
   player.shiftY = 0;
   player.width = PLAYER_SIZE_PX;
   player.height = PLAYER_SIZE_PX;
-  player.currentSpeed = speed;
   player.acceleration = new Point(0);
-  player.mass = mass;
-  player.team = team;
+  player.currentSpeed = playerData.speed;
+  player.team = playerData.team;
+  player.fieldPosition = playerData.fieldPosition!;
 
   return player;
 }
