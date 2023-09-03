@@ -1,8 +1,11 @@
+import { CommonModule } from '@angular/common'; 
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift, getRandomInRange } from 'src/utils/render';
 import { circleLine, polygonPoint, linePoint } from 'intersects';
 import { BoardPart } from 'src/types';
+import { BehaviorSubject } from 'rxjs';
 
 interface Movable {
   speed: number;
@@ -10,6 +13,7 @@ interface Movable {
   shiftY: number;
   acceleration?: Point;
   mass?: number;
+  team?: string;
 }
 
 type MovableSprite = Sprite & Movable;
@@ -36,16 +40,22 @@ BOTTOM_RIGHT_SEGMENT.name = BoardPart.BottomRight;
 const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX).lineTo(0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX);
 BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
 
+let playersOnIce: MovableSprite[] = [];
 let bouncedBoard: BoardPart | null = null;
 let previousBouncedBoard: BoardPart | null = null;
+let isPuckCaught = false;
+let puck: MovableGraphics;
 
 @Component({
   selector: 'app-pixi-demo',
   standalone: true,
-  template: '',
+  imports: [CommonModule, MatButtonModule],
+  templateUrl: './pixi-demo.component.html',
+  styleUrls: ['./pixi-demo.component.scss'],
 })
 export class PixiDemoComponent implements AfterViewInit {
-  @ViewChild('canvas') canvas!: ElementRef;
+  redTeamCount = 0;
+  blueTeamCount = 0;
 
   constructor(private readonly elementRef: ElementRef, private readonly zone: NgZone) {}
 
@@ -54,11 +64,13 @@ export class PixiDemoComponent implements AfterViewInit {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
-      const redPlayer = getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 80, 25);
-      const bluePlayer =  getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70, 22);
-      const puck = getPuck(getRandomInRange(100, 800), getRandomInRange(100, 400), getRandomInRange(0, PI * 2), getRandomInRange(100, 200));
+      playersOnIce = [
+        getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
+        getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
+      ]
+      puck = getPuckRandom();
 
-      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, redPlayer, bluePlayer, puck);
+      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, ...playersOnIce, puck);
 
       // const mouseCoords = { x: 0, y: 0 };
       // app.stage.eventMode = 'static';
@@ -71,9 +83,10 @@ export class PixiDemoComponent implements AfterViewInit {
 
       app.ticker.add((delta) => {
         updatePuckPosition(puck, bouncedBoard);
-        [redPlayer, bluePlayer].forEach(player => {
+        
+        playersOnIce.forEach(player => {
           updatePlayerPosition(player, puck);
-          checkPuckCatch(player, puck);
+          this.checkPuckCatch(player, puck, app);
         });
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
@@ -110,11 +123,40 @@ export class PixiDemoComponent implements AfterViewInit {
     });
   }
 
-  getApp(): Application {
+  private getApp(): Application {
     const app = new Application<HTMLCanvasElement>({ background: 'white', resizeTo: window, antialias: true });
     this.elementRef.nativeElement.appendChild(app.view);
 
     return app;
+  }
+
+  private checkPuckCatch(player: MovableSprite, currentPuck: MovableGraphics, app: Application): void {
+    if (!isPuckCaught && playerToPuckDistance(player, currentPuck) < PLAYER_SIZE_PX / 2) {
+      player.speed = currentPuck.speed = 0;
+      isPuckCaught = true;
+      
+      if (player.team === 'Red') {
+        this.redTeamCount = this.redTeamCount + 1;
+      } else {
+        this.blueTeamCount = this.blueTeamCount + 1;
+      }
+
+      setTimeout(() => {
+        app.stage.removeChild(...playersOnIce, currentPuck);
+        app.ticker.stop();
+      }, 1000);
+
+      setTimeout(() => {
+        puck = getPuckRandom();
+        playersOnIce = [
+          getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 'Red', 80, 25),
+          getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', 'Blue', 70, 22),
+        ];
+        app.stage.addChild(...playersOnIce, puck);
+        app.ticker.start();
+        isPuckCaught = false;
+      }, 2000);
+    }
   }
 }
 
@@ -144,7 +186,7 @@ function getRinkBorder(): Graphics {
   return rinkBorder;
 }
 
-function getPlayer(x: number, y: number, imageName: string, mass: number, speed: number = 0): MovableSprite {
+function getPlayer(x: number, y: number, imageName: string, team: string, mass: number, speed: number = 0): MovableSprite {
   const player = Sprite.from(`../../assets/images/${imageName}`) as MovableSprite;
   player.anchor.set(0.5);
   player.x = x;
@@ -156,8 +198,13 @@ function getPlayer(x: number, y: number, imageName: string, mass: number, speed:
   player.speed = speed;
   player.acceleration = new Point(0);
   player.mass = mass;
+  player.team = team;
 
   return player;
+}
+
+function getPuckRandom(): MovableGraphics {
+  return getPuck(getRandomInRange(100, 800), getRandomInRange(20, 380), getRandomInRange(0, PI * 2), getRandomInRange(100, 200));
 }
 
 function getPuck(x: number, y: number, angle: number, speed: number): MovableGraphics {
@@ -308,10 +355,4 @@ function updatePlayerPosition(player: MovableSprite, target: MovableGraphics): v
   const angle = atan2(targetY - player.y, targetX - player.x);
   player.shiftX = shift * cos(angle);
   player.shiftY = shift * sin(angle);
-}
-
-function checkPuckCatch(player: MovableSprite, puck: MovableGraphics): void {
-  if (playerToPuckDistance(player, puck) < PLAYER_SIZE_PX / 2) {
-    player.speed = puck.speed = 0;
-  }
 }
