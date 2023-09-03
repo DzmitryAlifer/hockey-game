@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, NgZone, ViewChild } from '@angular/core';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/utils/render';
+import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, calculatePlayerShift } from 'src/utils/render';
 import { circleLine, polygonPoint, linePoint } from 'intersects';
 import { BoardPart } from 'src/types';
 
@@ -17,6 +17,8 @@ type MovableGraphics = Graphics & Movable;
 
 const sin = Math.sin;
 const cos = Math.cos;
+const atan2 = Math.atan2;
+const abs = Math.abs;
 const playerSpeed = 0.05;
 const playerImpulse = 2;
 const speed = 0.13;
@@ -51,12 +53,11 @@ export class PixiDemoComponent implements AfterViewInit {
       const app = this.getApp();
       const backgroundRink = await getBackgroundRink();
       const rinkBorder = getRinkBorder();
-      const redPlayer = getPlayer(0, 0, 'jersey_red.png', 80);
+      const redPlayer = getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', 80, 25);
       const bluePlayer =  getPlayer(RINK_LENGTH_PX / 2 + PLAYER_SIZE_PX * 2, RINK_WIDTH_PX / 2, 'jersey_blue.png', 70);
-      const puck = getPuck(850, 100, PI / 2 - 0.01, 30);
-      // const puck = getPuck(RINK_LENGTH_PX / 2 , RINK_WIDTH_PX / 2, PI / 2, 0);
+      const puck = getPuck(830, 100, PI / 2 - 1.03, 30);
 
-      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, /*redPlayer, bluePlayer,*/ puck);
+      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, redPlayer, /*bluePlayer,*/ puck);
 
       // const mouseCoords = { x: 0, y: 0 };
       // app.stage.eventMode = 'static';
@@ -68,42 +69,8 @@ export class PixiDemoComponent implements AfterViewInit {
       // });
 
       app.ticker.add((delta) => {
-        puck.x += puck.shiftX;
-        puck.y += puck.shiftY;
-
-        const { left, right, top, bottom } = puck.getBounds();
-
-        if (!bouncedBoard) {
-          if (left <= PUCK_RADIUS_PX || right >= RINK_LENGTH_PX - PUCK_RADIUS_PX) {
-            bouncedBoard = BoardPart.Left; puck.shiftX = -puck.shiftX;
-          } else if (top <= PUCK_RADIUS_PX || bottom >= RINK_WIDTH_PX - PUCK_RADIUS_PX) {
-            bouncedBoard = BoardPart.Top; 
-            puck.shiftY = -puck.shiftY;
-          } else if (pointToCornerSegmentDistance(puck, TOP_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopRight) {
-            bouncedBoard = previousBouncedBoard = BoardPart.TopRight;
-            const temp = puck.shiftX;
-            puck.shiftX = puck.shiftY;
-            puck.shiftY = temp;
-          } else if (pointToCornerSegmentDistance(puck, BOTTOM_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomRight) {
-            bouncedBoard = previousBouncedBoard = BoardPart.BottomRight; 
-            const temp = puck.shiftX;
-            puck.shiftX = -puck.shiftY;
-            puck.shiftY = -temp;
-          } else if (pointToCornerSegmentDistance(puck, BOTTOM_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomLeft) {
-            bouncedBoard = previousBouncedBoard = BoardPart.BottomLeft;
-            const temp = puck.shiftX;
-            puck.shiftX = puck.shiftY;
-            puck.shiftY = temp;
-          } else if (pointToCornerSegmentDistance(puck, TOP_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopLeft) {
-            bouncedBoard = previousBouncedBoard = BoardPart.TopLeft; 
-            const temp = puck.shiftX;
-            puck.shiftX = -puck.shiftY;
-            puck.shiftY = -temp;
-          }
-        } else {
-          bouncedBoard = null;
-        }
-       
+        calculatePuckPosition(puck, bouncedBoard);
+        calculatePlayerPosition(redPlayer, puck);
 
         // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
@@ -173,13 +140,16 @@ function getRinkBorder(): Graphics {
   return rinkBorder;
 }
 
-function getPlayer(x: number, y: number, imageName?: string, mass?: number): MovableSprite {
+function getPlayer(x: number, y: number, imageName: string, mass: number, speed: number = 0): MovableSprite {
   const player = Sprite.from(`../../assets/images/${imageName}`) as MovableSprite;
   player.anchor.set(0.5);
   player.x = x;
   player.y = y;
+  player.shiftX = 0;
+  player.shiftY = 0;
   player.width = PLAYER_SIZE_PX;
   player.height = PLAYER_SIZE_PX;
+  player.speed = speed;
   player.acceleration = new Point(0);
   player.mass = mass;
 
@@ -271,4 +241,55 @@ function pointToCornerSegmentDistance(puck: Graphics, cornerSegment: Graphics): 
   return [BoardPart.TopRight, BoardPart.BottomLeft].includes(cornerSegment.name as BoardPart) ? 
     pointToSegmentDistance({ x: x + PUCK_RADIUS_PX, y: y + PUCK_RADIUS_PX }, { x: left, y: top }, { x: right, y: bottom }) :
     pointToSegmentDistance({ x: x + PUCK_RADIUS_PX, y: y + PUCK_RADIUS_PX }, { x: left, y: bottom }, { x: right, y: top });
+}
+
+function calculatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | null): void {
+  puck.x += puck.shiftX;
+  puck.y += puck.shiftY;
+
+  const { left, right, top, bottom } = puck.getBounds();
+
+  if (!bouncedBoard) {
+    if (left <= PUCK_RADIUS_PX || right >= RINK_LENGTH_PX - PUCK_RADIUS_PX) {
+      bouncedBoard = BoardPart.Left; puck.shiftX = -puck.shiftX;
+    } else if (top <= PUCK_RADIUS_PX || bottom >= RINK_WIDTH_PX - PUCK_RADIUS_PX) {
+      bouncedBoard = BoardPart.Top;
+      puck.shiftY = -puck.shiftY;
+    } else if (pointToCornerSegmentDistance(puck, TOP_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopRight) {
+      bouncedBoard = previousBouncedBoard = BoardPart.TopRight;
+      const temp = puck.shiftX;
+      puck.shiftX = puck.shiftY;
+      puck.shiftY = temp;
+    } else if (pointToCornerSegmentDistance(puck, BOTTOM_RIGHT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomRight) {
+      bouncedBoard = previousBouncedBoard = BoardPart.BottomRight;
+      const temp = puck.shiftX;
+      puck.shiftX = -puck.shiftY;
+      puck.shiftY = -temp;
+    } else if (pointToCornerSegmentDistance(puck, BOTTOM_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.BottomLeft) {
+      bouncedBoard = previousBouncedBoard = BoardPart.BottomLeft;
+      const temp = puck.shiftX;
+      puck.shiftX = puck.shiftY;
+      puck.shiftY = temp;
+    } else if (pointToCornerSegmentDistance(puck, TOP_LEFT_SEGMENT) <= PUCK_RADIUS_PX && previousBouncedBoard !== BoardPart.TopLeft) {
+      bouncedBoard = previousBouncedBoard = BoardPart.TopLeft;
+      const temp = puck.shiftX;
+      puck.shiftX = -puck.shiftY;
+      puck.shiftY = -temp;
+    }
+  } else {
+    bouncedBoard = null;
+  }
+}
+
+function calculatePlayerPosition(player: MovableSprite, target: MovableGraphics): void {
+  player.x += player.shiftX;
+  player.y += player.shiftY;
+
+  const { left, right, top, bottom } = target.getBounds();
+  const targetX = (left + right) / 2;
+  const targetY = (top + bottom) / 2;
+  const shift = player.speed / SPEED_TO_SHIFT_RATIO;
+  const angle = atan2(targetY - player.y, targetX - player.x);
+  player.shiftX = shift * cos(angle);
+  player.shiftY = shift * sin(angle);
 }
