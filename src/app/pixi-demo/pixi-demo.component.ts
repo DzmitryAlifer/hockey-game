@@ -2,26 +2,14 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Texture } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO, getRandomInRange } from 'src/utils/render';
+import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
-import { BoardPart } from 'src/types';
-
-interface Movable {
-  speed: number;
-  shiftX: number;
-  shiftY: number;
-  acceleration?: Point;
-  mass?: number;
-  team?: string;
-}
+import { BoardPart, Movable, MovableGraphics, MovableSprite } from 'src/types';
 
 enum Team {
   Red = 'Red',
   Blue = 'Blue',
 }
-
-type MovableSprite = Sprite & Movable;
-type MovableGraphics = Graphics & Movable;
 
 const sin = Math.sin;
 const cos = Math.cos;
@@ -351,4 +339,8 @@ function updatePlayerPosition(player: MovableSprite, target: MovableGraphics): v
   const angle = atan2(targetY - player.y, targetX - player.x);
   player.shiftX = shift * cos(angle);
   player.shiftY = shift * sin(angle);
+}
+
+function getRandomInRange(min: number, max: number): number {
+  return min + Math.random() * (max - min);
 }

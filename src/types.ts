@@ -1,16 +1,4 @@
-export interface Point {
-    x: number;
-    y: number;
-}
-
-export interface Movable {
-    point: Point;
-    destination?: Point;
-    angle?: number;
-    speed?: number;
-}
-
-export interface Puck extends Movable {}
+import { Sprite, Graphics, Point } from 'pixi.js';
 
 export interface PlayerPerson extends Movable {
     team: string;
@@ -30,3 +18,16 @@ export enum BoardPart {
     BottomLeft = 'bl',
     BottomRight = 'br',
 }
+
+export interface Movable {
+    speed: number;
+    shiftX: number;
+    shiftY: number;
+    acceleration?: Point;
+    mass?: number;
+    team?: string;
+}
+
+
+export type MovableSprite = Sprite & Movable;
+export type MovableGraphics = Graphics & Movable;

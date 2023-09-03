@@ -1,0 +1,16 @@
+export const PI = Math.PI;
+export const PUCK_RADIUS_PX = 4;
+export const PUCK_CLEANUP_RADIUS_PX = PUCK_RADIUS_PX + 2;
+export const RINK_WIDTH_PX = 400;
+export const CORNER_SEGMENT_SIZE_PX = 60;
+export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
+export const PLAYER_SIZE_PX = RINK_WIDTH_PX / 12;
+export const PLAYER_MAX_SPEED = 40;
+export const PUCK_MAX_SPEED = 200;
+export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
+export const PUCK_MIN_SPEED_WITHOUT_ICE_RESISTANCE = 30;
+export const PUCK_SPEED_DECREASE_RATIO = 0.02;
+export const PUCK_MIN_SHIFT_PX = 0.5;
+export const PUCK_DRAG_RATIO = 0.99;
+export const SPEED_TO_SHIFT_RATIO = 10;
+export const CLOSE_DISTANCE_PX = PLAYER_SIZE_PX / 2;
