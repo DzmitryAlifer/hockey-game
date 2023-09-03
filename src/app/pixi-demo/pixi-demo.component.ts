@@ -4,11 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, BaseTexture, BLEND_MODES, Container, DisplayObject, Graphics, IPointData, Point, Polygon, Rectangle, Sprite, Text, TextStyle } from 'pixi.js';
 import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
-import { BoardPart, Movable, MovableGraphics, Player, PlayerPerson, PlayerSkills } from 'src/types';
+import { BoardPart, Movable, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
 
 enum Team {
-  Red = 'Red',
-  Blue = 'Blue',
+  Red = 'red',
+  Blue = 'blue',
 }
 
 const sin = Math.sin;
@@ -29,6 +29,11 @@ BOTTOM_RIGHT_SEGMENT.name = BoardPart.BottomRight;
 
 const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX).lineTo(0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX);
 BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
+
+const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [
+  { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 },
+  { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 },
+];
 
 let playersOnIce: Player[] = [];
 let bouncedBoard: BoardPart | null = null;
@@ -165,13 +170,13 @@ function getRinkBorder(): Graphics {
 
 function getPlayers(): Player[] {
   return [
-    getPlayer(100, RINK_WIDTH_PX / 2, 'jersey_red.png', { team: Team.Red, speed: 25, strength: 100, aggressiveness: 100 }),
-    getPlayer(600, RINK_WIDTH_PX / 2, 'jersey_blue.png', { team: Team.Blue, speed: 22, strength: 50, aggressiveness: 50 }),
+    getPlayer(100, RINK_WIDTH_PX / 2, { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 }),
+    getPlayer(600, RINK_WIDTH_PX / 2, { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 }),
   ];
 }
 
-function getPlayer(x: number, y: number, imageName: string, playerData: PlayerPerson & PlayerSkills): Player {
-  const player = Sprite.from(`../../assets/images/${imageName}`) as Player;
+function getPlayer(x: number, y: number, playerData: PlayerPerson & PlayerSkills): Player {
+  const player = Sprite.from(`../../assets/images/jersey_${playerData.team}.png`) as Player;
   player.anchor.set(0.5);
   player.x = x;
   player.y = y;
@@ -180,6 +185,7 @@ function getPlayer(x: number, y: number, imageName: string, playerData: PlayerPe
   player.width = PLAYER_SIZE_PX;
   player.height = PLAYER_SIZE_PX;
   player.acceleration = new Point(0);
+  player.id = playerData.id;
   player.currentSpeed = playerData.speed;
   player.team = playerData.team;
   player.fieldPosition = playerData.fieldPosition!;
