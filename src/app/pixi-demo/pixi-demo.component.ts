@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, Container, DisplayObject, Graphics, IPointData, Point, Sprite, Text } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, HIT_DISTANCE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
+import { CORNER_SEGMENT_SIZE_PX, HIT_DISTANCE_PX, MIN_HIT_VELOCITY, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
 import { BoardPart, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
 
@@ -16,6 +16,7 @@ const cos = Math.cos;
 const atan2 = Math.atan2;
 const abs = Math.abs;
 const hypot = Math.hypot;
+const random = Math.random;
 const playerImpulse = 2;
 
 const TOP_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(0, CORNER_SEGMENT_SIZE_PX).lineTo(CORNER_SEGMENT_SIZE_PX, 0);
@@ -71,10 +72,13 @@ export class PixiDemoComponent implements AfterViewInit {
     const app = this.getApp();
     const backgroundRink = await getBackgroundRink();
     const rinkBorder = getRinkBorder();
-    app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT/*, ...playersOnIce, puck*/);
+    puck = getPuckRandom();
+    app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT, puck);
+
     const team1PlayerContainers = getPlayerContainers(TEAM_1_SETUP);
     const team2PlayerContainers = getPlayerContainers(TEAM_2_SETUP);
-    setupStageWithPlayers(app, PLAYERS_SETUP);
+    playersContainers = [...team1PlayerContainers, ...team2PlayerContainers];
+    app.stage.addChild(...playersContainers);
 
     // const mouseCoords = { x: 0, y: 0 };
     // app.stage.eventMode = 'static';
@@ -88,13 +92,13 @@ export class PixiDemoComponent implements AfterViewInit {
     app.ticker.add((delta) => {
       updatePuckPosition(puck, bouncedBoard);
       const closeOpponentsPairs = findCloseOpponentPairs(team1PlayerContainers, team2PlayerContainers);
-
+      checkHits(closeOpponentsPairs);
       
       playersContainers.forEach(playerContainer => {
         const player = playerContainer.getChildAt(0) as Player;
         const text = playerContainer.getChildAt(1) as Text;
         updatePlayerPosition(player, text, puck);
-        this.checkPuckCatch(player, puck, app);
+        this.checkPuckCatch(player, puck, app, playersContainers);
       });
 
       // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
@@ -137,7 +141,7 @@ export class PixiDemoComponent implements AfterViewInit {
     return app;
   }
 
-  private checkPuckCatch(player: Player, currentPuck: MovableGraphics, app: Application): void {
+  private checkPuckCatch(player: Player, currentPuck: MovableGraphics, app: Application, playersContainers: Container[]): void {
     if (!isPuckCaught && playerToPuckDistance(player, currentPuck) < PLAYER_SIZE_PX / 2) {
       player.currentSpeed = currentPuck.currentSpeed = 0;
       isPuckCaught = true;
@@ -197,6 +201,10 @@ function getPlayer(x: number, y: number, playerData: PlayerPerson & PlayerSkills
   player.currentSpeed = playerData.speed;
   player.team = playerData.team;
   player.fieldPosition = playerData.fieldPosition!;
+  player.speed = playerData.speed;
+  player.strength = playerData.strength;
+  player.aggressiveness = playerData.aggressiveness;
+  player.agility = playerData.agility;
 
   return player;
 }
@@ -372,7 +380,7 @@ function updatePlayerPosition(player: Player, text: Text, target: MovableGraphic
 }
 
 function getRandomInRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
+  return min + random() * (max - min);
 }
 
 function setupStageWithPlayers(app: Application, playersSetup: (PlayerPerson & PlayerSkills)[]): void {
@@ -416,3 +424,22 @@ function findCloseOpponentPairs(team1PlayerContainers: Container<DisplayObject>[
 
     return closeOpponentsPairs;
   }
+
+function checkHits(closeOpponentPairs: [Container<DisplayObject>, Container<DisplayObject>][]): void {
+  for (let [player1Container, player2Container] of closeOpponentPairs) {
+    const player1 = player1Container.getChildAt(0) as Player;
+    const player2 = player2Container.getChildAt(0) as Player;
+    const velocity = playerToPlayerSpeed(player1, player2);
+
+    if (velocity <= MIN_HIT_VELOCITY) continue;
+
+    const player1ChanseToHit = (player1.aggressiveness + player1.strength / 2) * getRandomInRange(0, 30);
+    const player2ChanseToHit = (player2.aggressiveness + player2.strength / 2) * getRandomInRange(0, 30);
+    const player1ChanseToDodge = player1.agility * getRandomInRange(0, 30);
+    const player2ChanseToDodge = player1.agility * getRandomInRange(0, 30);
+
+    console.log('velocity: ', velocity);
+    console.log('hit: ', player1ChanseToHit, player2ChanseToHit);
+    console.log('dodge: ', player1ChanseToDodge, player2ChanseToDodge);
+  }
+}

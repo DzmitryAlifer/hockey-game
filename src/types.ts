@@ -38,6 +38,7 @@ export interface PlayerSkills {
 export interface PlayerStatus {
     hasPuck?: boolean;
     isOnIce?: boolean;
+    isInactive?: boolean;
 }
 
 export interface PlayerPerson {

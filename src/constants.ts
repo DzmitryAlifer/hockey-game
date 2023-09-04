@@ -6,6 +6,7 @@ export const CORNER_SEGMENT_SIZE_PX = 60;
 export const RINK_LENGTH_PX = RINK_WIDTH_PX * 2.215;
 export const PLAYER_SIZE_PX = RINK_WIDTH_PX / 12;
 export const HIT_DISTANCE_PX = PLAYER_SIZE_PX * 2;
+export const MIN_HIT_VELOCITY = 4;
 export const PLAYER_MAX_SPEED = 40;
 export const PUCK_MAX_SPEED = 200;
 export const PUCK_BOUNCE_MIN_SPEED_DECREASE = 5;
