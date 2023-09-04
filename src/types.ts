@@ -32,6 +32,7 @@ export interface PlayerSkills {
     speed: number;
     strength: number;
     aggressiveness: number;
+    agility: number;
 }
 
 export interface PlayerStatus {

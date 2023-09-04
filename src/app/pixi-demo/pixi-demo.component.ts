@@ -31,8 +31,16 @@ const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SE
 BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
 
 const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [
-  { id: '1', team: Team.Red, number: 88, fieldPosition: PlayerPosition.C, speed: 25, strength: 100, aggressiveness: 100 },
-  { id: '2', team: Team.Blue, number: 10, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50 },
+  { id: '1', team: Team.Red, number: 11, fieldPosition: PlayerPosition.C, speed: 30, strength: 100, aggressiveness: 100, agility: 100 },
+  { id: '1', team: Team.Red, number: 13, fieldPosition: PlayerPosition.LW, speed: 28, strength: 100, aggressiveness: 100, agility: 100 },
+  { id: '1', team: Team.Red, number: 14, fieldPosition: PlayerPosition.RW, speed: 26, strength: 100, aggressiveness: 100, agility: 100 },
+  { id: '1', team: Team.Red, number: 15, fieldPosition: PlayerPosition.LD, speed: 24, strength: 100, aggressiveness: 100, agility: 100 },
+  { id: '1', team: Team.Red, number: 16, fieldPosition: PlayerPosition.RD, speed: 22, strength: 100, aggressiveness: 100, agility: 100 },
+  { id: '2', team: Team.Blue, number: 21, fieldPosition: PlayerPosition.C, speed: 25, strength: 50, aggressiveness: 50, agility: 50 },
+  { id: '2', team: Team.Blue, number: 22, fieldPosition: PlayerPosition.LW, speed: 24, strength: 50, aggressiveness: 50, agility: 50 },
+  { id: '2', team: Team.Blue, number: 23, fieldPosition: PlayerPosition.RW, speed: 23, strength: 50, aggressiveness: 50, agility: 50 },
+  { id: '2', team: Team.Blue, number: 24, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50, agility: 50 },
+  { id: '2', team: Team.Blue, number: 25, fieldPosition: PlayerPosition.RD, speed: 21, strength: 50, aggressiveness: 50, agility: 50 },
 ];
 
 let playersContainers: Container[] = [];
@@ -227,10 +235,24 @@ function collisionResponse(object1: Player, object2: Player): Point {
 function playerToPuckDistance(player: Player, puck: MovableGraphics): number {
   const playerBounds = player.getBounds();
   const puckBounds = puck.getBounds();
-  const deltaX = (playerBounds.left + playerBounds.right) / 2 - (puckBounds.left + puckBounds.right) / 2;
-  const deltaY = (playerBounds.top + playerBounds.bottom) / 2 - (puckBounds.top + puckBounds.bottom) / 2;
+  const deltaX = (playerBounds.left + playerBounds.right - puckBounds.left - puckBounds.right) / 2;
+  const deltaY = (playerBounds.top + playerBounds.bottom - puckBounds.top - puckBounds.bottom) / 2;
 
   return hypot(deltaX, deltaY);
+}
+
+function playerToPlayerDistance(player1: Player, player2: Player): number {
+  const player1Bounds = player1.getBounds();
+  const player2Bounds = player2.getBounds();
+
+  const deltaX = (player1Bounds.left + player1Bounds.right - player2Bounds.left - player2Bounds.right) / 2;
+  const deltaY = (player1Bounds.top + player1Bounds.bottom - player2Bounds.top - player2Bounds.bottom) / 2;
+
+  return hypot(deltaX, deltaY);
+}
+
+function playerToPlayerSpeed(player1: Player, player2: Player): number {
+  return hypot(player1.shiftX - player2.shiftX, player1.shiftY - player2.shiftY);
 }
 
 function pointToSegmentDistance(p: IPointData, a: IPointData, b: IPointData): number {
