@@ -399,19 +399,20 @@ function getPlayerContainers(playersSetup: (PlayerPerson & PlayerSkills)[]): Con
   return containers;
 }
 
-function findCloseOpponentPairs(team1PlayerContainers: Container<DisplayObject>[], team2PlayerContainers: Container<DisplayObject>[]): [Player, Player][] {
-  const closeOpponentsPairs: [Player, Player][] = [];
+function findCloseOpponentPairs(team1PlayerContainers: Container<DisplayObject>[], team2PlayerContainers: Container<DisplayObject>[]): 
+  [Container<DisplayObject>, Container<DisplayObject>][] {
+    const closeOpponentsPairs: [Container<DisplayObject>, Container<DisplayObject>][] = [];
 
-  team1PlayerContainers.forEach(player1Contaner => {
-    team2PlayerContainers.forEach(player2Contaner => {
-      const player1 = player1Contaner.getChildAt(0) as Player;
-      const player2 = player2Contaner.getChildAt(0) as Player;
+    team1PlayerContainers.forEach(player1Contaner => {
+      team2PlayerContainers.forEach(player2Contaner => {
+        const player1 = player1Contaner.getChildAt(0) as Player;
+        const player2 = player2Contaner.getChildAt(0) as Player;
 
-      if (playerToPlayerDistance(player1, player2) < HIT_DISTANCE_PX) {
-        closeOpponentsPairs.push([player1, player2]);
-      }
+        if (playerToPlayerDistance(player1, player2) < HIT_DISTANCE_PX) {
+          closeOpponentsPairs.push([player1Contaner, player2Contaner]);
+        }
+      });
     });
-  });
 
-  return closeOpponentsPairs;
-}
+    return closeOpponentsPairs;
+  }
