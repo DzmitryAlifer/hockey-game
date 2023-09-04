@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common'; 
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { Application, Assets, Container, Graphics, IPointData, Point, Sprite, Text } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
+import { Application, Assets, Container, DisplayObject, Graphics, IPointData, Point, Sprite, Text } from 'pixi.js';
+import { CORNER_SEGMENT_SIZE_PX, HIT_DISTANCE_PX, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
 import { BoardPart, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
 
@@ -30,18 +30,23 @@ BOTTOM_RIGHT_SEGMENT.name = BoardPart.BottomRight;
 const BOTTOM_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(CORNER_SEGMENT_SIZE_PX, RINK_WIDTH_PX).lineTo(0, RINK_WIDTH_PX - CORNER_SEGMENT_SIZE_PX);
 BOTTOM_LEFT_SEGMENT.name = BoardPart.BottomLeft;
 
-const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [
+const TEAM_1_SETUP: (PlayerPerson & PlayerSkills)[] = [
   { id: '1', team: Team.Red, number: 11, fieldPosition: PlayerPosition.C, speed: 30, strength: 100, aggressiveness: 100, agility: 100 },
   { id: '1', team: Team.Red, number: 13, fieldPosition: PlayerPosition.LW, speed: 28, strength: 100, aggressiveness: 100, agility: 100 },
   { id: '1', team: Team.Red, number: 14, fieldPosition: PlayerPosition.RW, speed: 26, strength: 100, aggressiveness: 100, agility: 100 },
   { id: '1', team: Team.Red, number: 15, fieldPosition: PlayerPosition.LD, speed: 24, strength: 100, aggressiveness: 100, agility: 100 },
   { id: '1', team: Team.Red, number: 16, fieldPosition: PlayerPosition.RD, speed: 22, strength: 100, aggressiveness: 100, agility: 100 },
+];
+
+const TEAM_2_SETUP: (PlayerPerson & PlayerSkills)[] = [
   { id: '2', team: Team.Blue, number: 21, fieldPosition: PlayerPosition.C, speed: 25, strength: 50, aggressiveness: 50, agility: 50 },
   { id: '2', team: Team.Blue, number: 22, fieldPosition: PlayerPosition.LW, speed: 24, strength: 50, aggressiveness: 50, agility: 50 },
   { id: '2', team: Team.Blue, number: 23, fieldPosition: PlayerPosition.RW, speed: 23, strength: 50, aggressiveness: 50, agility: 50 },
   { id: '2', team: Team.Blue, number: 24, fieldPosition: PlayerPosition.LD, speed: 22, strength: 50, aggressiveness: 50, agility: 50 },
   { id: '2', team: Team.Blue, number: 25, fieldPosition: PlayerPosition.RD, speed: 21, strength: 50, aggressiveness: 50, agility: 50 },
 ];
+
+const PLAYERS_SETUP: (PlayerPerson & PlayerSkills)[] = [...TEAM_1_SETUP, ...TEAM_2_SETUP];
 
 let playersContainers: Container[] = [];
 let bouncedBoard: BoardPart | null = null;
@@ -63,32 +68,36 @@ export class PixiDemoComponent implements AfterViewInit {
   constructor(private readonly elementRef: ElementRef) {}
 
   async ngAfterViewInit(): Promise<void> {
-      const app = this.getApp();
-      const backgroundRink = await getBackgroundRink();
-      const rinkBorder = getRinkBorder();
-      app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT/*, ...playersOnIce, puck*/);
-      setupStageWithPlayers(app);
+    const app = this.getApp();
+    const backgroundRink = await getBackgroundRink();
+    const rinkBorder = getRinkBorder();
+    app.stage.addChild(backgroundRink, rinkBorder, TOP_RIGHT_SEGMENT, BOTTOM_RIGHT_SEGMENT, BOTTOM_LEFT_SEGMENT, TOP_LEFT_SEGMENT/*, ...playersOnIce, puck*/);
+    const team1PlayerContainers = getPlayerContainers(TEAM_1_SETUP);
+    const team2PlayerContainers = getPlayerContainers(TEAM_2_SETUP);
+    setupStageWithPlayers(app, PLAYERS_SETUP);
 
-      // const mouseCoords = { x: 0, y: 0 };
-      // app.stage.eventMode = 'static';
-      // app.stage.hitArea = rinkBorder.currentPath;
+    // const mouseCoords = { x: 0, y: 0 };
+    // app.stage.eventMode = 'static';
+    // app.stage.hitArea = rinkBorder.currentPath;
 
-      // app.stage.on('mousemove', (event) => {
+    // app.stage.on('mousemove', (event) => {
       //   mouseCoords.x = event.global.x;
       //   mouseCoords.y = event.global.y;
       // });
 
-      app.ticker.add((delta) => {
-        updatePuckPosition(puck, bouncedBoard);
+    app.ticker.add((delta) => {
+      updatePuckPosition(puck, bouncedBoard);
+      const closeOpponentsPairs = findCloseOpponentPairs(team1PlayerContainers, team2PlayerContainers);
 
-        playersContainers.forEach(playerContainer => {
-          const player = playerContainer.getChildAt(0) as Player;
-          const text = playerContainer.getChildAt(1) as Text;
-          updatePlayerPosition(player, text, puck);
-          this.checkPuckCatch(player, puck, app);
-        });
+      
+      playersContainers.forEach(playerContainer => {
+        const player = playerContainer.getChildAt(0) as Player;
+        const text = playerContainer.getChildAt(1) as Text;
+        updatePlayerPosition(player, text, puck);
+        this.checkPuckCatch(player, puck, app);
+      });
 
-        // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
+      // redPlayer.acceleration?.set(redPlayer.acceleration.x * 0.9, redPlayer.acceleration.y * 0.9);
         // bluePlayer.acceleration?.set(bluePlayer.acceleration.x * 0.9, bluePlayer.acceleration.y * 0.9);
 
         // if (bluePlayer.x < 0 || bluePlayer.x > RINK_LENGTH_PX) {
@@ -118,7 +127,7 @@ export class PixiDemoComponent implements AfterViewInit {
         // bluePlayer.y += bluePlayer.acceleration!.y * delta;
         // redPlayer.x += redPlayer.acceleration!.x * delta;
         // redPlayer.y += redPlayer.acceleration!.y * delta;
-      });
+    });
   }
 
   private getApp(): Application {
@@ -140,7 +149,7 @@ export class PixiDemoComponent implements AfterViewInit {
       }, 1000);
 
       setTimeout(() => {
-        setupStageWithPlayers(app);
+        setupStageWithPlayers(app, PLAYERS_SETUP);
         app.ticker.start();
         isPuckCaught = false;
       }, 2000);
@@ -366,8 +375,8 @@ function getRandomInRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-function setupStageWithPlayers(app: Application): void {
-  playersContainers = getPlayerContainers(PLAYERS_SETUP);
+function setupStageWithPlayers(app: Application, playersSetup: (PlayerPerson & PlayerSkills)[]): void {
+  playersContainers = getPlayerContainers(playersSetup);
   puck = getPuckRandom();
   app.stage.addChild(...playersContainers, puck);
 }
@@ -388,4 +397,21 @@ function getPlayerContainers(playersSetup: (PlayerPerson & PlayerSkills)[]): Con
   });
 
   return containers;
+}
+
+function findCloseOpponentPairs(team1PlayerContainers: Container<DisplayObject>[], team2PlayerContainers: Container<DisplayObject>[]): [Player, Player][] {
+  const closeOpponentsPairs: [Player, Player][] = [];
+
+  team1PlayerContainers.forEach(player1Contaner => {
+    team2PlayerContainers.forEach(player2Contaner => {
+      const player1 = player1Contaner.getChildAt(0) as Player;
+      const player2 = player2Contaner.getChildAt(0) as Player;
+
+      if (playerToPlayerDistance(player1, player2) < HIT_DISTANCE_PX) {
+        closeOpponentsPairs.push([player1, player2]);
+      }
+    });
+  });
+
+  return closeOpponentsPairs;
 }
