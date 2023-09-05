@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, NgZone } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Application, Assets, Container, DisplayObject, Graphics, IPointData, Point, Sprite, Text } from 'pixi.js';
-import { CORNER_SEGMENT_SIZE_PX, HIT_DISTANCE_PX, MIN_HIT_VELOCITY, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
+import { CORNER_SEGMENT_SIZE_PX, DODGE_THRESHOLD, HIT_DISTANCE_PX, HIT_THRESHOLD, MIN_HIT_VELOCITY, PI, PLAYER_SIZE_PX, PUCK_DRAG_RATIO, PUCK_MIN_SHIFT_PX, PUCK_RADIUS_PX, RINK_LENGTH_PX, RINK_WIDTH_PX, SPEED_TO_SHIFT_RATIO } from 'src/constants';
 import { linePoint } from 'intersects';
 import { BoardPart, MovableGraphics, Player, PlayerPerson, PlayerPosition, PlayerSkills } from 'src/types';
 
@@ -17,6 +17,7 @@ const atan2 = Math.atan2;
 const abs = Math.abs;
 const hypot = Math.hypot;
 const random = Math.random;
+const sqrt = Math.sqrt;
 const playerImpulse = 2;
 
 const TOP_LEFT_SEGMENT = new Graphics().lineStyle(2, '#00f').moveTo(0, CORNER_SEGMENT_SIZE_PX).lineTo(CORNER_SEGMENT_SIZE_PX, 0);
@@ -240,11 +241,11 @@ function testForAABB(object1: Sprite, object2: Sprite): boolean {
 function collisionResponse(object1: Player, object2: Player): Point {
   if (!object1 || !object2) return new Point(0);
   const vCollision = new Point(object2.x - object1.x, object2.y - object1.y);
-  const distance = Math.sqrt((object2.x - object1.x) * (object2.x - object1.x) + (object2.y - object1.y) * (object2.y - object1.y));
+  const distance = sqrt((object2.x - object1.x) * (object2.x - object1.x) + (object2.y - object1.y) * (object2.y - object1.y));
   const vCollisionNorm = new Point(vCollision.x / distance, vCollision.y / distance);
   const vRelativeVelocity = new Point(object1.acceleration!.x - object2.acceleration!.x, object1.acceleration!.y - object2.acceleration!.y);
   const speed = vRelativeVelocity.x * vCollisionNorm.x + vRelativeVelocity.y * vCollisionNorm.y;
-  const impulse = playerImpulse * speed / (object1.mass! + object2.mass!);
+  const impulse = playerImpulse * speed / (object1.strength + object2.strength);
 
   return new Point(impulse * vCollisionNorm.x, impulse * vCollisionNorm.y);
 }
@@ -365,6 +366,8 @@ function updatePuckPosition(puck: MovableGraphics, bouncedBoard: BoardPart | nul
 }
 
 function updatePlayerPosition(player: Player, text: Text, target: MovableGraphics): void {
+  if (player.isInactive) return;
+
   player.x += player.shiftX;
   player.y += player.shiftY;
   text.x += player.shiftX;
@@ -435,11 +438,28 @@ function checkHits(closeOpponentPairs: [Container<DisplayObject>, Container<Disp
 
     const player1ChanseToHit = (player1.aggressiveness + player1.strength / 2) * getRandomInRange(0, 30);
     const player2ChanseToHit = (player2.aggressiveness + player2.strength / 2) * getRandomInRange(0, 30);
+
+    if (player1ChanseToHit < HIT_THRESHOLD && player2ChanseToHit < HIT_THRESHOLD) continue;
+
     const player1ChanseToDodge = player1.agility * getRandomInRange(0, 30);
     const player2ChanseToDodge = player1.agility * getRandomInRange(0, 30);
 
-    console.log('velocity: ', velocity);
-    console.log('hit: ', player1ChanseToHit, player2ChanseToHit);
-    console.log('dodge: ', player1ChanseToDodge, player2ChanseToDodge);
+    if (player1ChanseToDodge > DODGE_THRESHOLD && player2ChanseToDodge > DODGE_THRESHOLD) continue;
+
+    let winner, loser;
+
+    if (player1ChanseToHit > player2ChanseToHit) {
+      winner = player1;
+      loser = player2;
+    } else {
+      winner = player2;
+      loser = player1;
+    }
+
+    const damage = winner.strength - loser.strength;
+
+    console.log('v=', velocity, ' dmg=', damage);
+
+
   }
 }
